@@ -18,6 +18,14 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
+        .debug-info {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
         .container {
             background-color: #f8f9fa;
             border-radius: 5px;
@@ -123,24 +131,57 @@
             <p>View on Etherscan: <a id="etherscanLink" href="#" target="_blank">View Transaction</a></p>
         </div>
         
+        <div id="debugInfo" class="debug-info" style="display:none;">
+            <h3>Debug Information</h3>
+            <div id="debugContent"></div>
+        </div>
+        
         <button id="updateDetailsBtn" class="btn" style="margin-top: 30px;">Update NFT Details</button>
+        <button id="toggleDebugBtn" class="btn" style="margin-top: 30px; margin-left: 10px; background-color: #6c757d;">Show Debug Info</button>
     </div>
     
     <script>
+        // Debug information
+        let debugInfo = {
+            urlParams: {},
+            processedParams: {},
+            eventLog: []
+        };
+        
+        function logEvent(event, data) {
+            debugInfo.eventLog.push({ 
+                time: new Date().toISOString(),
+                event,
+                data
+            });
+            updateDebugInfo();
+        }
+        
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
             const text = element.textContent;
             
             navigator.clipboard.writeText(text).then(function() {
                 alert('Copied to clipboard: ' + text);
+                logEvent('clipboard-copy', { elementId, text });
             }, function() {
                 alert('Failed to copy text');
+                logEvent('clipboard-copy-error', { elementId });
             });
+        }
+        
+        function updateDebugInfo() {
+            const debugContent = document.getElementById('debugContent');
+            if (debugContent) {
+                debugContent.textContent = JSON.stringify(debugInfo, null, 2);
+            }
         }
         
         document.getElementById('updateDetailsBtn').addEventListener('click', function() {
             const contractAddress = prompt("Enter NFT Contract Address:", document.getElementById('contractAddress').textContent);
             const tokenId = prompt("Enter Token ID:", document.getElementById('tokenId').textContent);
+            
+            logEvent('update-button-click', { contractAddress, tokenId });
             
             if (contractAddress && tokenId) {
                 document.getElementById('contractAddress').textContent = contractAddress;
@@ -153,26 +194,80 @@
                 document.getElementById('etherscanLink').href = `https://sepolia.etherscan.io/token/${contractAddress}?a=${tokenId}`;
                 
                 document.getElementById('nftDetails').style.display = 'block';
+                
+                logEvent('details-updated', { contractAddress, tokenId });
             }
         });
         
+        // Add event listener for debug toggle
+        if (document.getElementById('toggleDebugBtn')) {
+            document.getElementById('toggleDebugBtn').addEventListener('click', function() {
+                const debugDiv = document.getElementById('debugInfo');
+                if (debugDiv.style.display === 'none') {
+                    debugDiv.style.display = 'block';
+                    this.textContent = 'Hide Debug Info';
+                    updateDebugInfo();
+                    logEvent('debug-shown', {});
+                } else {
+                    debugDiv.style.display = 'none';
+                    this.textContent = 'Show Debug Info';
+                    logEvent('debug-hidden', {});
+                }
+            });
+        }
+        
         // Check for URL parameters
         window.onload = function() {
+            // Get URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const contract = urlParams.get('contract');
             const token = urlParams.get('token');
+            const chainId = urlParams.get('chainId') || 'sepolia';
+            
+            // Save to debug info
+            debugInfo.urlParams = {
+                contract,
+                token,
+                chainId,
+                fullUrl: window.location.href,
+                search: window.location.search
+            };
+            
+            logEvent('page-loaded', { contract, token, chainId });
+            updateDebugInfo();
             
             if (contract && token) {
+                // Set token ID and contract address
                 document.getElementById('contractAddress').textContent = contract;
                 document.getElementById('tokenId').textContent = token;
                 
                 // Update the details section
                 document.getElementById('nftContract').textContent = contract;
                 document.getElementById('nftTokenId').textContent = token;
-                document.getElementById('openseaLink').href = `https://testnets.opensea.io/assets/sepolia/${contract}/${token}`;
-                document.getElementById('etherscanLink').href = `https://sepolia.etherscan.io/token/${contract}?a=${token}`;
+                
+                // Set appropriate URLs based on the chain
+                let openseaUrl = '';
+                let etherscanUrl = '';
+                
+                if (chainId === '1' || chainId === 'mainnet') {
+                    openseaUrl = `https://opensea.io/assets/ethereum/${contract}/${token}`;
+                    etherscanUrl = `https://etherscan.io/token/${contract}?a=${token}`;
+                } else if (chainId === '11155111' || chainId === 'sepolia') {
+                    openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contract}/${token}`;
+                    etherscanUrl = `https://sepolia.etherscan.io/token/${contract}?a=${token}`;
+                } else {
+                    openseaUrl = `https://testnets.opensea.io/assets/${chainId}/${contract}/${token}`;
+                    etherscanUrl = `https://${chainId}.etherscan.io/token/${contract}?a=${token}`;
+                }
+                
+                document.getElementById('openseaLink').href = openseaUrl;
+                document.getElementById('etherscanLink').href = etherscanUrl;
                 
                 document.getElementById('nftDetails').style.display = 'block';
+                
+                logEvent('details-set-from-url', { contract, token, chainId, openseaUrl, etherscanUrl });
+            } else {
+                logEvent('missing-parameters', {});
             }
         };
     </script>

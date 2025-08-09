@@ -1,0 +1,441 @@
+{
+	"info": {
+		"_postman_id": "c8e36f28-8c41-4d71-ae1c-39f694e3c351",
+		"name": "Ava-Backend API",
+		"description": "A collection for testing the Ava-Backend API endpoints, including NFT functionality and MetaMask integration.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "API Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "Check if the API is running"
+			},
+			"response": []
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/healthcheck",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"healthcheck"
+					]
+				},
+				"description": "Check the health and configuration status of the API"
+			},
+			"response": []
+		},
+		{
+			"name": "MongoDB Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/mongo-status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mongo-status"
+					]
+				},
+				"description": "Check MongoDB connection status"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Data JSON",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/datajson",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"datajson"
+					]
+				},
+				"description": "Get a list of DataJson entries"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Data JSON",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Test Data\",\n  \"description\": \"This is a test data entry\",\n  \"properties\": {\n    \"type\": \"test\",\n    \"tags\": [\"api\", \"test\", \"json\"]\n  }\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/datajson",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"datajson"
+					]
+				},
+				"description": "Create a new DataJson entry"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Detail JSON",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/detailjson",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"detailjson"
+					]
+				},
+				"description": "Get a list of DetailJson entries"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Detail JSON",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Detailed Entry\",\n  \"description\": \"This is a test detail entry that will be pinned to IPFS\",\n  \"content\": {\n    \"sections\": [\n      {\n        \"heading\": \"Section 1\",\n        \"text\": \"This is the first section content\"\n      },\n      {\n        \"heading\": \"Section 2\",\n        \"text\": \"This is the second section content\"\n      }\n    ]\n  }\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/detailjson",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"detailjson"
+					]
+				},
+				"description": "Create a new DetailJson entry and pin to IPFS"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Contract Data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/contract-data",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"contract-data"
+					]
+				},
+				"description": "Get a list of ContractData entries"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Contract Data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"NFT Metadata\",\n  \"description\": \"This is a test NFT metadata that will be used for minting\",\n  \"image\": \"https://images.pexels.com/photos/1292115/pexels-photo-1292115.jpeg\",\n  \"attributes\": [\n    {\n      \"trait_type\": \"Collection\",\n      \"value\": \"Test Collection\"\n    },\n    {\n      \"trait_type\": \"Rarity\",\n      \"value\": \"Uncommon\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/contract-data",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"contract-data"
+					]
+				},
+				"description": "Create a new ContractData entry and pin to IPFS"
+			},
+			"response": []
+		},
+		{
+			"name": "Convert DataJson to ContractData",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dataJsonId\": \"{{dataJsonId}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/convert-datajson-to-contract",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"convert-datajson-to-contract"
+					]
+				},
+				"description": "Convert a DataJson entry to ContractData"
+			},
+			"response": []
+		},
+		{
+			"name": "Mint NFT",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"recipientAddress\": \"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\",\n  \"ipfsHash\": \"{{ipfsHash}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/mint-nft",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mint-nft"
+					]
+				},
+				"description": "Mint an NFT using an IPFS hash"
+			},
+			"response": []
+		},
+		{
+			"name": "Mint NFT from DataJson",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"dataJsonId\": \"{{dataJsonId}}\",\n  \"recipientAddress\": \"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/mint-nft-from-datajson",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mint-nft-from-datajson"
+					]
+				},
+				"description": "Mint an NFT from a DataJson entry"
+			},
+			"response": []
+		},
+		{
+			"name": "Get NFT Details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/nft/{{tokenId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"nft",
+						"{{tokenId}}"
+					]
+				},
+				"description": "Get details about an NFT by token ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Test NFT Details (Mock)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/test/nft/{{tokenId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"test",
+						"nft",
+						"{{tokenId}}"
+					]
+				},
+				"description": "Get mock NFT details for testing"
+			},
+			"response": []
+		},
+		{
+			"name": "MetaMask Instructions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/metamask-instructions/sepolia/{{contractAddress}}/{{tokenId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"metamask-instructions",
+						"sepolia",
+						"{{contractAddress}}",
+						"{{tokenId}}"
+					]
+				},
+				"description": "Get instructions for adding an NFT to MetaMask"
+			},
+			"response": []
+		},
+		{
+			"name": "NFT Import Page",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/nft-import/sepolia/{{contractAddress}}/{{tokenId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"nft-import",
+						"sepolia",
+						"{{contractAddress}}",
+						"{{tokenId}}"
+					]
+				},
+				"description": "Get HTML page for importing NFT to MetaMask"
+			},
+			"response": []
+		},
+		{
+			"name": "Add NFT to MetaMask",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/add-nft/sepolia/{{contractAddress}}/{{tokenId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"add-nft",
+						"sepolia",
+						"{{contractAddress}}",
+						"{{tokenId}}"
+					]
+				},
+				"description": "Redirect to the add to MetaMask page"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://ava-backend-sepia.vercel.app",
+			"type": "string",
+			"description": "Production Vercel deployment URL"
+		},
+		{
+			"key": "localUrl",
+			"value": "http://localhost:3000",
+			"type": "string",
+			"description": "Local development server URL"
+		},
+		{
+			"key": "contractAddress",
+			"value": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+			"type": "string",
+			"description": "NFT contract address"
+		},
+		{
+			"key": "tokenId",
+			"value": "42",
+			"type": "string",
+			"description": "Example token ID for testing"
+		},
+		{
+			"key": "ipfsHash",
+			"value": "QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ",
+			"type": "string",
+			"description": "Example IPFS hash for testing"
+		},
+		{
+			"key": "dataJsonId",
+			"value": "REPLACE_WITH_ACTUAL_ID",
+			"type": "string",
+			"description": "ID of a DataJson document"
+		}
+	]
+}

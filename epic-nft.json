@@ -1,0 +1,30 @@
+{
+  "name": "Epic NFT Collection #1",
+  "description": "This is the first NFT in our Epic Collection series. It features a stunning digital artwork created exclusively for blockchain.",
+  "image": "https://images.pexels.com/photos/1292115/pexels-photo-1292115.jpeg",
+  "animation_url": "https://example.com/nft/epic-collection-1.mp4",
+  "external_url": "https://example.com/epic-collection/1",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Epic Series"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    },
+    {
+      "trait_type": "Creator",
+      "value": "Digital Artist"
+    }
+  ],
+  "properties": {
+    "files": [
+      {
+        "uri": "https://example.com/nft/epic-collection-1-high-res.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "digital art"
+  }
+}

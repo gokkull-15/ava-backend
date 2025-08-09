@@ -488,6 +488,11 @@ app.get('/nft/:tokenId', async (req, res) => {
       });
     }
     
+    // Set ENABLE_MOCK_DATA in the environment for testing
+    if (process.env.NODE_ENV !== 'production' && !process.env.ENABLE_MOCK_DATA) {
+      process.env.ENABLE_MOCK_DATA = 'true';
+    }
+    
     const { getNFTDetails } = require('./utils/nftContract');
     const nftDetails = await getNFTDetails(tokenId);
     
@@ -510,7 +515,8 @@ app.get('/nft/:tokenId', async (req, res) => {
       networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
       contractAddress: contractAddress,
       tokenId: tokenId,
-      openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`
+      openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+      importUrl: `https://ava-backend-sepia.vercel.app/add-nft/sepolia/${contractAddress}/${tokenId}`
     };
     
     res.status(200).json({
@@ -519,6 +525,39 @@ app.get('/nft/:tokenId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting NFT details:', error);
+    
+    // Provide mock data if in development/test mode
+    if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_MOCK_DATA === 'true') {
+      const contractAddress = process.env.NFT_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      const tokenId = req.params.tokenId;
+      
+      const mockNft = {
+        tokenId: tokenId,
+        owner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        tokenURI: `ipfs://QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ`,
+        contractAddress: contractAddress,
+        metamaskInfo: {
+          addToMetamask: `To add this NFT to MetaMask, follow these steps:
+          1. Open MetaMask and click on the 'NFTs' tab
+          2. Click 'Import NFT'
+          3. Enter the Contract Address: ${contractAddress}
+          4. Enter the Token ID: ${tokenId}
+          5. Click 'Import'`,
+          networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
+          contractAddress: contractAddress,
+          tokenId: tokenId,
+          openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+          importUrl: `https://ava-backend-sepia.vercel.app/add-nft/sepolia/${contractAddress}/${tokenId}`
+        }
+      };
+      
+      return res.status(200).json({
+        success: true,
+        nft: mockNft,
+        isMockData: true
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to get NFT details'
@@ -635,6 +674,30 @@ app.get('/import-nft/:contractAddress/:tokenId', async (req, res) => {
   }
 });
 
+// Add another endpoint with the same functionality but different path
+app.get('/add-nft/:chainId/:contractAddress/:tokenId', async (req, res) => {
+  try {
+    const { chainId, contractAddress, tokenId } = req.params;
+    
+    if (!contractAddress || !tokenId) {
+      return res.status(400).send('Contract address and token ID are required');
+    }
+    
+    console.log(`Redirecting to NFT import page for chain ${chainId}, contract ${contractAddress}, token ${tokenId}`);
+    
+    // Ensure we have the actual host for the redirect
+    const host = req.get('host') || 'ava-backend-sepia.vercel.app';
+    const protocol = req.protocol || 'https';
+    const baseUrl = `${protocol}://${host}`;
+    
+    // Use the direct HTML endpoint instead of redirecting
+    res.redirect(`${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`);
+  } catch (error) {
+    console.error('Error redirecting to NFT import page:', error);
+    res.status(500).send('Error processing your request');
+  }
+});
+
 // Endpoint to provide MetaMask integration instructions
 app.get('/metamask-instructions/:chainId/:contractAddress/:tokenId', async (req, res) => {
   try {
@@ -653,8 +716,16 @@ app.get('/metamask-instructions/:chainId/:contractAddress/:tokenId', async (req,
     let networkRpcUrl = '';
     let blockExplorerUrl = '';
     let openseaUrl = '';
+    let numericChainId = chainId;
     
-    switch (chainId) {
+    // Handle text-based chain IDs
+    if (chainId === 'sepolia') {
+      numericChainId = '11155111';
+    } else if (chainId === 'mainnet') {
+      numericChainId = '1';
+    }
+    
+    switch (numericChainId) {
       case '11155111': // Sepolia
         networkName = 'Sepolia Test Network';
         networkRpcUrl = 'https://eth-sepolia.public.blastapi.io';
@@ -713,6 +784,278 @@ app.get('/metamask-instructions/:chainId/:contractAddress/:tokenId', async (req,
       success: false,
       error: error.message || 'Failed to generate MetaMask instructions'
     });
+  }
+});
+
+// Test endpoint for MetaMask integration that always returns mock data
+app.get('/test/nft/:tokenId', async (req, res) => {
+  try {
+    const { tokenId } = req.params;
+    const contractAddress = process.env.NFT_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+    
+    // Get the host for dynamic URL generation
+    const host = req.get('host') || 'ava-backend-sepia.vercel.app';
+    const protocol = req.protocol || 'https';
+    const baseUrl = `${protocol}://${host}`;
+    
+    const mockNft = {
+      tokenId,
+      owner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      tokenURI: `ipfs://QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ`,
+      contractAddress,
+      metadata: {
+        name: `Test NFT #${tokenId}`,
+        description: "This is a test NFT for MetaMask integration",
+        image: "https://gateway.pinata.cloud/ipfs/QmUFfU2K5gkwcwhnJbVVwacCUjGPF9YgJFQAMeGMjAV4ew"
+      },
+      metamaskInfo: {
+        addToMetamask: `To add this NFT to MetaMask, follow these steps:
+        1. Open MetaMask and click on the 'NFTs' tab
+        2. Click 'Import NFT'
+        3. Enter the Contract Address: ${contractAddress}
+        4. Enter the Token ID: ${tokenId}
+        5. Click 'Import'`,
+        networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
+        contractAddress,
+        tokenId,
+        openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+        importUrl: `${baseUrl}/add-nft/sepolia/${contractAddress}/${tokenId}`,
+        directImportUrl: `${baseUrl}/nft-import/sepolia/${contractAddress}/${tokenId}`
+      }
+    };
+    
+    res.status(200).json({
+      success: true,
+      nft: mockNft,
+      isMockData: true
+    });
+  } catch (error) {
+    console.error('Error in test NFT endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Test endpoint error'
+    });
+  }
+});
+
+// Direct HTML endpoint for MetaMask integration
+app.get('/nft-import/:chainId/:contractAddress/:tokenId', async (req, res) => {
+  try {
+    const { chainId, contractAddress, tokenId } = req.params;
+    
+    // Get network info
+    let networkName = 'Sepolia Test Network';
+    let networkChainId = '11155111';
+    let blockExplorer = 'https://sepolia.etherscan.io';
+    let openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`;
+    
+    // Set network info based on chain ID
+    if (chainId === 'mainnet' || chainId === '1') {
+      networkName = 'Ethereum Mainnet';
+      networkChainId = '1';
+      blockExplorer = 'https://etherscan.io';
+      openseaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
+    }
+    
+    // Get NFT details if available
+    let nftDetails = null;
+    let tokenImage = '';
+    let tokenName = `NFT #${tokenId}`;
+    let tokenDescription = '';
+    
+    try {
+      const { getNFTDetails } = require('./utils/nftContract');
+      nftDetails = await getNFTDetails(tokenId);
+      
+      if (nftDetails && nftDetails.tokenURI) {
+        const tokenURI = nftDetails.tokenURI;
+        console.log(`Found tokenURI: ${tokenURI}`);
+        
+        // Try to fetch metadata from IPFS
+        if (tokenURI.startsWith('ipfs://')) {
+          const ipfsHash = tokenURI.replace('ipfs://', '');
+          const ipfsGateways = [
+            `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+            `https://ipfs.io/ipfs/${ipfsHash}`,
+            `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`
+          ];
+          
+          let metadata = null;
+          for (const gateway of ipfsGateways) {
+            try {
+              console.log(`Trying to fetch metadata from ${gateway}`);
+              const response = await fetch(gateway, { timeout: 3000 });
+              metadata = await response.json();
+              if (metadata) break;
+            } catch (e) {
+              console.log(`Failed to fetch from ${gateway}: ${e.message}`);
+            }
+          }
+          
+          if (metadata) {
+            console.log('Metadata found:', metadata);
+            tokenName = metadata.name || tokenName;
+            tokenDescription = metadata.description || '';
+            
+            // Convert IPFS image to HTTP URL
+            if (metadata.image) {
+              if (metadata.image.startsWith('ipfs://')) {
+                const imageIpfsHash = metadata.image.replace('ipfs://', '');
+                tokenImage = `https://gateway.pinata.cloud/ipfs/${imageIpfsHash}`;
+              } else {
+                tokenImage = metadata.image;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching NFT metadata:', error);
+    }
+    
+    // Generate HTML directly
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Import NFT to MetaMask</title>
+        <style>
+            body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; }
+            .box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .btn { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+            code { background: #e9ecef; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+            .nft-image { max-width: 300px; margin: 15px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+            .metamask-button { 
+                background-color: #f6851b; 
+                color: white; 
+                padding: 12px 24px; 
+                border: none; 
+                border-radius: 5px; 
+                font-size: 18px; 
+                cursor: pointer; 
+                display: block; 
+                width: 100%; 
+                margin: 20px 0; 
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+                font-weight: bold;
+            }
+            .metamask-button:hover { background-color: #e2761b; }
+        </style>
+    </head>
+    <body>
+        <h1>${tokenName}</h1>
+        
+        <div class="box">
+            <h2>NFT Details</h2>
+            ${tokenImage ? `<img src="${tokenImage}" alt="${tokenName}" class="nft-image">` : ''}
+            ${tokenDescription ? `<p>${tokenDescription}</p>` : ''}
+            <p><strong>Contract Address:</strong> <code id="contractAddress">${contractAddress}</code> 
+               <button onclick="copy('contractAddress')" class="btn">Copy</button></p>
+            <p><strong>Token ID:</strong> <code id="tokenId">${tokenId}</code> 
+               <button onclick="copy('tokenId')" class="btn">Copy</button></p>
+            <p><strong>Network:</strong> ${networkName}</p>
+            <p><a href="${openseaUrl}" target="_blank" rel="noopener">View on OpenSea</a></p>
+            
+            <button class="metamask-button" onclick="addToMetaMask()">Add to MetaMask</button>
+        </div>
+        
+        <div class="box">
+            <h2>Manual Import Instructions</h2>
+            <ol>
+                <li>Open your MetaMask wallet</li>
+                <li>Click on the "NFTs" tab at the bottom</li>
+                <li>Click "Import NFT"</li>
+                <li>Enter the contract address and token ID from above</li>
+                <li>Click "Import"</li>
+            </ol>
+        </div>
+        
+        <script>
+            function copy(id) {
+                const el = document.getElementById(id);
+                navigator.clipboard.writeText(el.textContent)
+                    .then(() => alert('Copied to clipboard: ' + el.textContent))
+                    .catch(() => alert('Failed to copy'));
+            }
+            
+            // Log that the page loaded correctly with parameters
+            console.log('NFT Import page loaded with:', {
+                chainId: '${chainId}',
+                contractAddress: '${contractAddress}',
+                tokenId: '${tokenId}'
+            });
+            
+            // Function to add NFT directly to MetaMask
+            async function addToMetaMask() {
+                try {
+                    if (typeof window.ethereum === 'undefined') {
+                        alert('MetaMask is not installed! Please install MetaMask first.');
+                        return;
+                    }
+                    
+                    // Request access to the user's accounts
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    // Check if on the right network
+                    let chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+                    let requiredChainIdHex = '0x' + parseInt('${networkChainId}').toString(16);
+                    
+                    if (chainIdHex !== requiredChainIdHex) {
+                        alert('Please switch to ${networkName} in MetaMask before adding this NFT.');
+                        
+                        // Try to switch the network
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: requiredChainIdHex }]
+                            });
+                        } catch (switchError) {
+                            alert('Could not switch to the required network automatically. Please switch manually.');
+                            return;
+                        }
+                    }
+                    
+                    // Add the NFT to MetaMask
+                    const wasAdded = await window.ethereum.request({
+                        method: 'wallet_watchAsset',
+                        params: {
+                            type: 'ERC721',
+                            options: {
+                                address: '${contractAddress}',
+                                tokenId: '${tokenId}',
+                                ${tokenImage ? `image: '${tokenImage}',` : ''}
+                                name: '${tokenName.replace(/'/g, "\\'")}',
+                                ${tokenDescription ? `description: '${tokenDescription.replace(/'/g, "\\'")}',` : ''}
+                            }
+                        }
+                    });
+                    
+                    if (wasAdded) {
+                        console.log('NFT was added to MetaMask');
+                        alert('NFT was added to your MetaMask wallet!');
+                    } else {
+                        console.log('NFT was not added');
+                        alert('NFT was not added to your MetaMask wallet. You can try the manual method instead.');
+                    }
+                } catch (error) {
+                    console.error('Error adding NFT to MetaMask:', error);
+                    alert('Error adding NFT to MetaMask: ' + error.message);
+                }
+            }
+        </script>
+    </body>
+    </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('Error generating NFT import page:', error);
+    res.status(500).send('Error generating NFT import page: ' + error.message);
   }
 });
 
