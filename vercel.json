@@ -5,7 +5,7 @@
       "src": "index.js", 
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".env.production", "setEnv.js", "public/**"]
+        "includeFiles": [".env.production", "setEnv.js", "public/**", "routes/**", "utils/**"]
       }
     },
     {
@@ -21,8 +21,12 @@
     { "src": "/mint-nft-from-datajson", "dest": "/index.js" },
     { "src": "/nft/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/import-nft/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/nft-import/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/add-nft/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/metamask-deeplink/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/metamask-instructions/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/add-to-metamask.html", "dest": "/public/add-to-metamask.html" },
+    { "src": "/mm-watch-asset.html", "dest": "/public/mm-watch-asset.html" },
     { "src": "/api/(.*)", "dest": "/index.js" },
     { "src": "/(.*)", "dest": "/index.js" }
   ]

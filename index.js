@@ -805,9 +805,13 @@ app.get('/metamask-deeplink/:chainId/:contractAddress/:tokenId', async (req, res
     // Convert to hex
     const chainIdHex = '0x' + parseInt(numericChainId).toString(16);
     
+    // Get the host for URL generation
+    const host = req.get('host') || 'ava-backend-sepia.vercel.app';
+    const protocol = req.protocol || 'https';
+    
     // Format the deep link URL for MetaMask
     // This uses the MetaMask mobile app URI scheme
-    const deepLink = `https://metamask.app.link/dapp/watch-asset?asset=ERC721&address=${contractAddress}&tokenId=${tokenId}&chainId=${chainIdHex}`;
+    const deepLink = `https://metamask.app.link/dapp/${host}/mm-watch-asset.html?asset=ERC721&address=${contractAddress}&tokenId=${tokenId}&chainId=${chainIdHex}`;
     
     // Either redirect or render a page with the deep link
     if (req.query.redirect === 'true') {
@@ -834,6 +838,18 @@ app.get('/metamask-deeplink/:chainId/:contractAddress/:tokenId', async (req, res
           <p>Contract: ${contractAddress}</p>
           <p>Token ID: ${tokenId}</p>
           <p>Chain: ${chainId} (${numericChainId})</p>
+          
+          <div style="margin-top: 40px;">
+            <h2>Manual Import Instructions</h2>
+            <ol style="text-align: left; display: inline-block;">
+              <li>Open your MetaMask mobile app</li>
+              <li>Tap on the NFTs tab</li>
+              <li>Tap "Import NFT"</li>
+              <li>Enter the contract address: <code>${contractAddress}</code></li>
+              <li>Enter the Token ID: <code>${tokenId}</code></li>
+              <li>Tap Import</li>
+            </ol>
+          </div>
         </body>
         </html>
       `);
@@ -897,424 +913,13 @@ app.get('/test/nft/:tokenId', async (req, res) => {
   }
 });
 
-// Direct HTML endpoint for MetaMask integration
-app.get('/nft-import/:chainId/:contractAddress/:tokenId', async (req, res) => {
-  try {
-    const { chainId, contractAddress, tokenId } = req.params;
-    
-    // Get network info
-    let networkName = 'Sepolia Test Network';
-    let networkChainId = '11155111';
-    let blockExplorer = 'https://sepolia.etherscan.io';
-    let openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`;
-    
-    // Set network info based on chain ID
-    if (chainId === 'mainnet' || chainId === '1') {
-      networkName = 'Ethereum Mainnet';
-      networkChainId = '1';
-      blockExplorer = 'https://etherscan.io';
-      openseaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
-    }
-    
-    // Get NFT details if available
-    let nftDetails = null;
-    let tokenImage = '';
-    let tokenName = `NFT #${tokenId}`;
-    let tokenDescription = '';
-    
-    try {
-      const { getNFTDetails } = require('./utils/nftContract');
-      nftDetails = await getNFTDetails(tokenId);
-      
-      if (nftDetails && nftDetails.tokenURI) {
-        const tokenURI = nftDetails.tokenURI;
-        console.log(`Found tokenURI: ${tokenURI}`);
-        
-        // Try to fetch metadata from IPFS
-        if (tokenURI.startsWith('ipfs://')) {
-          const ipfsHash = tokenURI.replace('ipfs://', '');
-          const ipfsGateways = [
-            `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-            `https://ipfs.io/ipfs/${ipfsHash}`,
-            `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`
-          ];
-          
-          let metadata = null;
-          for (const gateway of ipfsGateways) {
-            try {
-              console.log(`Trying to fetch metadata from ${gateway}`);
-              const response = await fetch(gateway, { timeout: 3000 });
-              metadata = await response.json();
-              if (metadata) break;
-            } catch (e) {
-              console.log(`Failed to fetch from ${gateway}: ${e.message}`);
-            }
-          }
-          
-          if (metadata) {
-            console.log('Metadata found:', metadata);
-            tokenName = metadata.name || tokenName;
-            tokenDescription = metadata.description || '';
-            
-            // Convert IPFS image to HTTP URL
-            if (metadata.image) {
-              if (metadata.image.startsWith('ipfs://')) {
-                const imageIpfsHash = metadata.image.replace('ipfs://', '');
-                tokenImage = `https://gateway.pinata.cloud/ipfs/${imageIpfsHash}`;
-              } else {
-                tokenImage = metadata.image;
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching NFT metadata:', error);
-    }
-    
-    // Generate HTML directly
-    const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Import NFT to MetaMask</title>
-        <style>
-            body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; }
-            .box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .btn { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-            code { background: #e9ecef; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
-            .nft-image { max-width: 300px; margin: 15px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-            .metamask-button { 
-                background-color: #f6851b; 
-                color: white; 
-                padding: 12px 24px; 
-                border: none; 
-                border-radius: 5px; 
-                font-size: 18px; 
-                cursor: pointer; 
-                display: block; 
-                width: 100%; 
-                margin: 20px 0; 
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                text-align: center;
-                font-weight: bold;
-            }
-            .metamask-button:hover { background-color: #e2761b; }
-        </style>
-    </head>
-    <body>
-        <h1>${tokenName}</h1>
-        
-        <div class="box">
-            <h2>NFT Details</h2>
-            ${tokenImage ? `<img src="${tokenImage}" alt="${tokenName}" class="nft-image">` : ''}
-            ${tokenDescription ? `<p>${tokenDescription}</p>` : ''}
-            <p><strong>Contract Address:</strong> <code id="contractAddress">${contractAddress}</code> 
-               <button onclick="copy('contractAddress')" class="btn">Copy</button></p>
-            <p><strong>Token ID:</strong> <code id="tokenId">${tokenId}</code> 
-               <button onclick="copy('tokenId')" class="btn">Copy</button></p>
-            <p><strong>Network:</strong> ${networkName}</p>
-            <p><a href="${openseaUrl}" target="_blank" rel="noopener">View on OpenSea</a></p>
-            
-            <button class="metamask-button" onclick="addToMetaMask()">Add to MetaMask (Desktop)</button>
-            
-            <p style="margin-top: 15px; text-align: center;">
-              <strong>Using Mobile?</strong>
-              <br>
-              <a href="/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}" style="color: #f6851b; font-weight: bold;">
-                Open Directly in MetaMask Mobile App
-              </a>
-            </p>
-        </div>
-        
-            <div class="box" id="manual-import">
-            <h2>Manual Import Instructions</h2>
-            <ol>
-                <li>Open your MetaMask wallet</li>
-                <li>Click on the "NFTs" tab at the bottom</li>
-                <li>Click "Import NFT"</li>
-                <li>Enter the contract address: <code id="contractAddress2">${contractAddress}</code> 
-                   <button onclick="copy('contractAddress2')" class="btn">Copy</button></li>
-                <li>Enter the Token ID: <code id="tokenId2">${tokenId}</code> 
-                   <button onclick="copy('tokenId2')" class="btn">Copy</button></li>
-                <li>Click "Import"</li>
-            </ol>
-            
-            <div style="margin-top: 20px;">
-                <button onclick="tryAlternativeMethod()" class="metamask-button" style="background-color: #6c757d;">
-                    Try Alternative Import Method
-                </button>
-            </div>
-        </div>
-        
-        <div class="box">
-            <h2>Troubleshooting</h2>
-            <ul>
-                <li><strong>Wrong Network</strong>: Make sure MetaMask is on the ${networkName} (Chain ID: ${networkChainId})</li>
-                <li><strong>NFT Not Visible</strong>: Sometimes it takes a few minutes for the NFT to appear in your wallet</li>
-                <li><strong>"Unable to verify ownership" Error</strong>: This can happen when the wallet can't verify NFT ownership. Try the manual method instead.</li>
-                <li><strong>Token Standard Issue</strong>: If you're seeing errors about token standards, try the manual import method</li>
-            </ul>
-        </div>        <script>
-            function copy(id) {
-                const el = document.getElementById(id);
-                navigator.clipboard.writeText(el.textContent)
-                    .then(() => alert('Copied to clipboard: ' + el.textContent))
-                    .catch(() => alert('Failed to copy'));
-            }
-            
-            // Alternative method that works better with some MetaMask installations
-            async function tryAlternativeMethod() {
-                try {
-                    if (typeof window.ethereum === 'undefined') {
-                        alert('MetaMask is not installed! Please install MetaMask first.');
-                        return;
-                    }
-                    
-                    // Request access to accounts
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    if (!accounts || accounts.length === 0) {
-                        alert('Please connect to MetaMask first');
-                        return;
-                    }
-                    
-                    // Get current chain ID
-                    const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-                    const requiredChainIdHex = '0x' + parseInt('${networkChainId}').toString(16);
-                    
-                    if (chainIdHex !== requiredChainIdHex) {
-                        if (!confirm('You need to be on the ${networkName} network. Would you like to switch networks?')) {
-                            return;
-                        }
-                        
-                        try {
-                            await window.ethereum.request({
-                                method: 'wallet_switchEthereumChain',
-                                params: [{ chainId: requiredChainIdHex }]
-                            });
-                        } catch (err) {
-                            alert('Could not switch networks. Please manually switch to ${networkName} in MetaMask.');
-                            return;
-                        }
-                    }
-                    
-                    // Using a different method - using eth_call to check if the token exists
-                    // This works better with some wallets
-                    alert('Attempting alternative import method...\n\nA MetaMask popup will appear. Please approve it to add the NFT.');
-                    
-                    // Create a sample call to check if the token exists (using ERC721 ownerOf)
-                    const ownerOfAbi = '0x6352211e'; // keccak256("ownerOf(uint256)") first 4 bytes
-                    const tokenIdHex = parseInt('${tokenId}').toString(16).padStart(64, '0');
-                    const data = ownerOfAbi + tokenIdHex;
-                    
-                    try {
-                        // First check if the token exists with a call
-                        await window.ethereum.request({
-                            method: 'eth_call',
-                            params: [{
-                                to: '${contractAddress}',
-                                data: data
-                            }, 'latest']
-                        });
-                        
-                        // Now try the import directly
-                        window.location.href = 'https://metamask.app.link/dapp/${window.location.host}/nft-import/${chainId}/${contractAddress}/${tokenId}';
-                        
-                        setTimeout(() => {
-                            alert('If the MetaMask app didn\'t open, please try the manual import method instead.');
-                        }, 3000);
-                    } catch (error) {
-                        console.error('Error in alternative method:', error);
-                        alert('The alternative method failed. Please use the manual import method.');
-                    }
-                } catch (error) {
-                    console.error('Error in alternative import method:', error);
-                    alert('Error: ' + error.message + '\n\nPlease try the manual import method instead.');
-                }
-            }
-            
-            // Log that the page loaded correctly with parameters
-            console.log('NFT Import page loaded with:', {
-                chainId: '${chainId}',
-                contractAddress: '${contractAddress}',
-                tokenId: '${tokenId}'
-            });
-            
-            // Function to add NFT directly to MetaMask
-            async function addToMetaMask() {
-                try {
-                    if (typeof window.ethereum === 'undefined') {
-                        alert('MetaMask is not installed! Please install MetaMask first.');
-                        return;
-                    }
-                    
-                    // Request access to the user's accounts
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    
-                    // Check if on the right network
-                    let chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-                    let requiredChainIdHex = '0x' + parseInt('${networkChainId}').toString(16);
-                    
-                    console.log('Current chain ID:', chainIdHex);
-                    console.log('Required chain ID:', requiredChainIdHex);
-                    
-                    if (chainIdHex !== requiredChainIdHex) {
-                        console.log('Network mismatch, attempting to switch networks');
-                        
-                        // Try to switch the network
-                        try {
-                            await window.ethereum.request({
-                                method: 'wallet_switchEthereumChain',
-                                params: [{ chainId: requiredChainIdHex }]
-                            });
-                            
-                            // Verify the switch was successful
-                            chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-                            
-                            if (chainIdHex !== requiredChainIdHex) {
-                                alert('Please switch to ${networkName} in MetaMask before adding this NFT.');
-                                return;
-                            }
-                            
-                            console.log('Successfully switched to the required network');
-                        } catch (switchError) {
-                            console.error('Error switching network:', switchError);
-                            
-                            // If the network doesn't exist, we need to add it
-                            if (switchError.code === 4902) {
-                                try {
-                                    await window.ethereum.request({
-                                        method: 'wallet_addEthereumChain',
-                                        params: [
-                                            {
-                                                chainId: requiredChainIdHex,
-                                                chainName: '${networkName}',
-                                                nativeCurrency: {
-                                                    name: 'Ethereum',
-                                                    symbol: 'ETH',
-                                                    decimals: 18
-                                                },
-                                                rpcUrls: ['https://eth-sepolia.public.blastapi.io'],
-                                                blockExplorerUrls: ['https://sepolia.etherscan.io']
-                                            }
-                                        ]
-                                    });
-                                    
-                                    // Check if now on the right network
-                                    chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-                                    if (chainIdHex !== requiredChainIdHex) {
-                                        alert('Please switch to ${networkName} in MetaMask before adding this NFT.');
-                                        return;
-                                    }
-                                } catch (addError) {
-                                    console.error('Error adding network to MetaMask:', addError);
-                                    alert('Could not add the required network to MetaMask. Please switch manually to ${networkName}.');
-                                    return;
-                                }
-                            } else {
-                                alert('Could not switch to the required network automatically. Please switch manually to ${networkName}.');
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // Add the NFT to MetaMask
-                    // First check which version of wallet_watchAsset is supported
-                    let isNewMetaMask = false;
-                    try {
-                        // Check if we have the newer API for ERC721
-                        await window.ethereum.request({
-                            method: 'wallet_getCapabilities',
-                        }).then(capabilities => {
-                            isNewMetaMask = capabilities && capabilities.includes && 
-                                            capabilities.includes('wallet_watchAsset_ERC721');
-                        }).catch(() => {
-                            console.log('Using older MetaMask API');
-                            isNewMetaMask = false;
-                        });
-                    } catch (e) {
-                        console.log('Error checking capabilities:', e);
-                        isNewMetaMask = false;
-                    }
-                    
-                    console.log('Using newer MetaMask API:', isNewMetaMask);
-                    
-                    // Use the appropriate API version
-                    const wasAdded = await window.ethereum.request({
-                        method: 'wallet_watchAsset',
-                        params: isNewMetaMask ? 
-                            {
-                                type: 'ERC721',
-                                options: {
-                                    address: '${contractAddress}',
-                                    tokenId: '${tokenId}'
-                                },
-                            } : 
-                            {
-                                type: 'ERC721', 
-                                options: {
-                                    address: '${contractAddress}',
-                                    tokenId: '${tokenId}',
-                                    ${tokenImage ? `image: '${tokenImage}',` : ''}
-                                    name: '${tokenName.replace(/'/g, "\\'")}',
-                                    ${tokenDescription ? `description: '${tokenDescription.replace(/'/g, "\\'")}',` : ''}
-                                    symbol: 'NFT'
-                                },
-                            }
-                    });
-                    
-                    if (wasAdded) {
-                        console.log('NFT was added to MetaMask');
-                        alert('NFT was added to your MetaMask wallet!');
-                    } else {
-                        console.log('NFT was not added');
-                        alert('NFT was not added to your MetaMask wallet. You can try the manual method instead.');
-                    }
-                } catch (error) {
-                    console.error('Error adding NFT to MetaMask:', error);
-                    
-                    // Provide more specific guidance based on error messages
-                    if (error.message.includes('verify ownership') || error.message.includes('standard is not supported')) {
-                        alert('MetaMask couldn\'t verify ownership of this NFT. This could be because:\n\n' +
-                              '1. You need to switch to the ${networkName} network\n' +
-                              '2. You may not own this NFT\n' +
-                              '3. The contract may need to be verified on Etherscan\n\n' +
-                              'Try using the manual import method instead.');
-                        
-                        // Show manual import method more prominently
-                        document.querySelector('.box:nth-child(2)').style.backgroundColor = '#fff3cd';
-                        document.querySelector('.box:nth-child(2)').style.borderLeft = '4px solid #ffc107';
-                    } else if (error.message.includes('user rejected')) {
-                        alert('You rejected the MetaMask request. Please try again if you want to add the NFT.');
-                    } else {
-                        alert('Error adding NFT to MetaMask: ' + error.message + '\n\nPlease try the manual method below.');
-                    }
-                    
-                    // Log detailed error for debugging
-                    console.log({
-                        errorMessage: error.message,
-                        contractAddress: '${contractAddress}',
-                        tokenId: '${tokenId}',
-                        chainId: '${networkChainId}',
-                        networkName: '${networkName}'
-                    });
-                }
-            }
-        </script>
-    </body>
-    </html>
-    `;
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
-  } catch (error) {
-    console.error('Error generating NFT import page:', error);
-    res.status(500).send('Error generating NFT import page: ' + error.message);
-  }
-});
+// Import the NFT import route
+const nftImportRoute = require('./routes/nftImport');
+
+// Use the NFT import route directly
+app.get('/nft-import/:chainId/:contractAddress/:tokenId', nftImportRoute);
+
+// The NFT import functionality has been moved to a dedicated route in routes/nftImport.js
 
 // Add error handling for the server
 const server = app.listen(PORT, () => {
