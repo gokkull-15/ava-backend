@@ -7,6 +7,8 @@
     { "src": "/datajson", "dest": "/index.js" },
     { "src": "/detailjson", "dest": "/index.js" },
     { "src": "/contract-data", "dest": "/index.js" },
+    { "src": "/mint-nft", "dest": "/index.js" },
+    { "src": "/mint-nft-from-datajson", "dest": "/index.js" },
     { "src": "/api/(.*)", "dest": "/index.js" },
     { "src": "/(.*)", "dest": "/index.js" }
   ]

@@ -231,6 +231,66 @@
 				"description": "Convert an existing DataJson entry to a ContractData entry by pinning it to IPFS."
 			},
 			"response": []
+		},
+		{
+			"name": "Mint NFT with IPFS",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"recipientAddress\": \"0xYourEthereumAddress\",\n    \"ipfsHash\": \"QmYourIPFSHash\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/mint-nft",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"mint-nft"
+					]
+				},
+				"description": "Mint a new NFT using an IPFS hash for a recipient address."
+			},
+			"response": []
+		},
+		{
+			"name": "Mint NFT from DataJson",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"dataJsonId\": \"YOUR_DATAJSON_ID_HERE\",\n    \"recipientAddress\": \"0xYourEthereumAddress\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/mint-nft-from-datajson",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"mint-nft-from-datajson"
+					]
+				},
+				"description": "Mint a new NFT using data from an existing DataJson entry for a recipient address."
+			},
+			"response": []
 		}
 	],
 	"event": [

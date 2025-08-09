@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const CryptoJS = require('crypto-js');
 const pinataSDK = require('@pinata/sdk');
+const { mintNFTWithIPFS } = require('./utils/nftContract');
 
 const app = express();
 app.use(bodyParser.json());
@@ -108,6 +109,15 @@ const ContractDataSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now
+  },
+  nftData: {
+    tokenId: String,
+    recipientAddress: String,
+    txHash: String,
+    mintedAt: {
+      type: Date,
+      default: Date.now
+    }
   }
 });
 
@@ -390,6 +400,128 @@ app.get('/contract-data', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Endpoint to mint an NFT from an IPFS hash
+app.post('/mint-nft', async (req, res) => {
+  try {
+    const { recipientAddress, ipfsHash } = req.body;
+    
+    if (!recipientAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Recipient Ethereum address is required'
+      });
+    }
+    
+    if (!ipfsHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'IPFS hash is required'
+      });
+    }
+    
+    // Mint the NFT using the contract utility
+    const result = await mintNFTWithIPFS(recipientAddress, ipfsHash);
+    
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error minting NFT:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to mint NFT'
+    });
+  }
+});
+
+// Endpoint to mint an NFT directly from a DataJson entry
+app.post('/mint-nft-from-datajson', async (req, res) => {
+  try {
+    const { dataJsonId, recipientAddress } = req.body;
+    
+    if (!dataJsonId) {
+      return res.status(400).json({
+        success: false,
+        error: 'DataJson ID is required'
+      });
+    }
+    
+    if (!recipientAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Recipient Ethereum address is required'
+      });
+    }
+    
+    if (!mongoConnected) {
+      return res.status(503).json({
+        success: false,
+        error: 'MongoDB not connected',
+        mongoStatus: 0
+      });
+    }
+    
+    // Find the DataJson entry
+    const dataJsonEntry = await DataJson.findById(dataJsonId);
+    
+    if (!dataJsonEntry) {
+      return res.status(404).json({
+        success: false,
+        error: `DataJson with ID ${dataJsonId} not found`
+      });
+    }
+    
+    // Pin to IPFS first (this creates a ContractData entry as well)
+    const ipfsResult = await pinJSONToIPFS(dataJsonEntry.data, 'nft-data-from-datajson-' + Date.now());
+    
+    if (!ipfsResult || !ipfsResult.ipfsHash) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to pin data to IPFS'
+      });
+    }
+    
+    // Mint the NFT with the IPFS hash
+    const mintResult = await mintNFTWithIPFS(recipientAddress, ipfsResult.ipfsHash);
+    
+    if (mintResult.success) {
+      // Save the contract data
+      const contractEntry = new ContractData({
+        data: dataJsonEntry.data,
+        ...ipfsResult,
+        nftData: {
+          tokenId: mintResult.tokenId,
+          recipientAddress: recipientAddress,
+          txHash: mintResult.txHash,
+        }
+      });
+      
+      await contractEntry.save();
+      
+      res.status(200).json({
+        success: true,
+        nft: mintResult,
+        ipfs: ipfsResult,
+        originalDataJsonId: dataJsonId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: mintResult.error || 'Failed to mint NFT',
+        ipfs: ipfsResult
+      });
+    }
+  } catch (error) {
+    console.error('Error in mint-nft-from-datajson endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to mint NFT from DataJson'
+    });
+  }
+});
 
 // Add error handling for the server
 const server = app.listen(PORT, () => {
