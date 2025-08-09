@@ -130,12 +130,12 @@
 			"response": []
 		},
 		{
-			"name": "Hash - GET",
+			"name": "Contract Data - GET",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"raw": "https://ava-backend-sepia.vercel.app/contract-data",
 					"protocol": "https",
 					"host": [
 						"ava-backend-sepia",
@@ -143,15 +143,15 @@
 						"app"
 					],
 					"path": [
-						"hash"
+						"contract-data"
 					]
 				},
-				"description": "Retrieves all hash entries stored in MongoDB."
+				"description": "Retrieves all contract data entries stored in MongoDB with IPFS hash information."
 			},
 			"response": []
 		},
 		{
-			"name": "Hash - SHA256",
+			"name": "Contract Data - POST",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -162,10 +162,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"sha256\"\n}"
+					"raw": "{\n    \"contractName\": \"Sample Contract\",\n    \"version\": \"1.0.0\",\n    \"description\": \"This is sample contract data to be stored on IPFS\",\n    \"metadata\": {\n        \"owner\": \"Test User\",\n        \"createdAt\": \"2025-08-09\"\n    },\n    \"parameters\": {\n        \"param1\": \"value1\",\n        \"param2\": 42,\n        \"param3\": true\n    }\n}"
 				},
 				"url": {
-					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"raw": "https://ava-backend-sepia.vercel.app/contract-data",
 					"protocol": "https",
 					"host": [
 						"ava-backend-sepia",
@@ -173,70 +173,10 @@
 						"app"
 					],
 					"path": [
-						"hash"
+						"contract-data"
 					]
 				},
-				"description": "Generate SHA256 hash of provided text."
-			},
-			"response": []
-		},
-		{
-			"name": "Hash - MD5",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"md5\"\n}"
-				},
-				"url": {
-					"raw": "https://ava-backend-sepia.vercel.app/hash",
-					"protocol": "https",
-					"host": [
-						"ava-backend-sepia",
-						"vercel",
-						"app"
-					],
-					"path": [
-						"hash"
-					]
-				},
-				"description": "Generate MD5 hash of provided text."
-			},
-			"response": []
-		},
-		{
-			"name": "Hash - SHA1",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"sha1\"\n}"
-				},
-				"url": {
-					"raw": "https://ava-backend-sepia.vercel.app/hash",
-					"protocol": "https",
-					"host": [
-						"ava-backend-sepia",
-						"vercel",
-						"app"
-					],
-					"path": [
-						"hash"
-					]
-				},
-				"description": "Generate SHA1 hash of provided text."
+				"description": "Send contract data to be stored in MongoDB and pinned to IPFS."
 			},
 			"response": []
 		}
