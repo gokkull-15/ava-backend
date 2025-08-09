@@ -12,7 +12,7 @@ The API is deployed on Vercel and accessible at:
 
 - Store and retrieve JSON data with MongoDB
 - Pin data to IPFS using Pinata
-- Generate cryptographic hashes using SHA256, MD5, and SHA1 algorithms
+- Store contract data with IPFS hashes
 - RESTful API design
 
 ## API Endpoints
@@ -31,10 +31,10 @@ The API is deployed on Vercel and accessible at:
 - **GET /detailjson** - Retrieve all detail entries stored in MongoDB with IPFS information
 - **POST /detailjson** - Send detail JSON data to be stored in MongoDB and pinned to IPFS
 
-### Hash
+### Contract Data
 
-- **GET /hash** - Retrieve all hash entries stored in MongoDB
-- **POST /hash** - Generate a hash of provided text using specified algorithm (sha256, md5, or sha1)
+- **GET /contract-data** - Retrieve all contract data entries stored in MongoDB with IPFS information
+- **POST /contract-data** - Send contract data to be stored in MongoDB and pinned to IPFS
 
 ## Environment Variables
 
@@ -89,8 +89,8 @@ curl -X POST -H "Content-Type: application/json" -d '{"data": "Test data"}' http
 # Test POST detailjson
 curl -X POST -H "Content-Type: application/json" -d '{"title": "Test title", "description": "Test description"}' http://localhost:3000/detailjson
 
-# Test POST hash
-curl -X POST -H "Content-Type: application/json" -d '{"text": "Hello world", "algorithm": "sha256"}' http://localhost:3000/hash
+# Test POST contract-data
+curl -X POST -H "Content-Type: application/json" -d '{"contractName": "Sample Contract", "version": "1.0.0"}' http://localhost:3000/contract-data
 ```
 
 ## MongoDB Connection
