@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add NFT to MetaMask</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .container {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .instructions {
+            margin-top: 20px;
+        }
+        .instructions ol {
+            padding-left: 25px;
+        }
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        code {
+            background-color: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .info-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Your NFT to MetaMask</h1>
+        
+        <div class="warning-box">
+            <p><strong>Note:</strong> Make sure you have MetaMask installed and are connected to the Sepolia Test Network.</p>
+        </div>
+        
+        <div class="instructions">
+            <h2>Follow these steps:</h2>
+            <ol>
+                <li>Open your MetaMask wallet by clicking the extension icon</li>
+                <li>Click on the <strong>"NFTs"</strong> tab at the bottom</li>
+                <li>Click on <strong>"Import NFT"</strong> button</li>
+                <li>Enter the NFT contract address:
+                    <br>
+                    <code id="contractAddress">0x5FbDB2315678afecb367f032d93F642f64180aa3</code>
+                    <button onclick="copyToClipboard('contractAddress')" class="btn">Copy</button>
+                </li>
+                <li>Enter the Token ID:
+                    <br>
+                    <code id="tokenId">1</code>
+                    <button onclick="copyToClipboard('tokenId')" class="btn">Copy</button>
+                </li>
+                <li>Click <strong>"Import"</strong> to add the NFT to your wallet</li>
+            </ol>
+        </div>
+        
+        <div class="info-box">
+            <h3>Connect to Sepolia Test Network</h3>
+            <p>If you don't see the Sepolia Test Network in MetaMask:</p>
+            <ol>
+                <li>Click on the network dropdown at the top of MetaMask</li>
+                <li>Click <strong>"Add Network"</strong></li>
+                <li>Go to "Networks" > "Add Network" > "Add Network Manually"</li>
+                <li>Enter the following details:
+                    <ul>
+                        <li>Network Name: <code>Sepolia Test Network</code></li>
+                        <li>New RPC URL: <code>https://eth-sepolia.public.blastapi.io</code></li>
+                        <li>Chain ID: <code>11155111</code></li>
+                        <li>Currency Symbol: <code>ETH</code></li>
+                        <li>Block Explorer URL: <code>https://sepolia.etherscan.io</code></li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Save"</strong></li>
+            </ol>
+        </div>
+        
+        <div id="nftDetails" class="info-box" style="display:none;">
+            <h3>Your NFT Details</h3>
+            <p>Contract Address: <span id="nftContract"></span></p>
+            <p>Token ID: <span id="nftTokenId"></span></p>
+            <p>Chain: Sepolia Test Network (Chain ID: 11155111)</p>
+            <p>View on OpenSea: <a id="openseaLink" href="#" target="_blank">View NFT</a></p>
+            <p>View on Etherscan: <a id="etherscanLink" href="#" target="_blank">View Transaction</a></p>
+        </div>
+        
+        <button id="updateDetailsBtn" class="btn" style="margin-top: 30px;">Update NFT Details</button>
+    </div>
+    
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Copied to clipboard: ' + text);
+            }, function() {
+                alert('Failed to copy text');
+            });
+        }
+        
+        document.getElementById('updateDetailsBtn').addEventListener('click', function() {
+            const contractAddress = prompt("Enter NFT Contract Address:", document.getElementById('contractAddress').textContent);
+            const tokenId = prompt("Enter Token ID:", document.getElementById('tokenId').textContent);
+            
+            if (contractAddress && tokenId) {
+                document.getElementById('contractAddress').textContent = contractAddress;
+                document.getElementById('tokenId').textContent = tokenId;
+                
+                // Update the details section
+                document.getElementById('nftContract').textContent = contractAddress;
+                document.getElementById('nftTokenId').textContent = tokenId;
+                document.getElementById('openseaLink').href = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`;
+                document.getElementById('etherscanLink').href = `https://sepolia.etherscan.io/token/${contractAddress}?a=${tokenId}`;
+                
+                document.getElementById('nftDetails').style.display = 'block';
+            }
+        });
+        
+        // Check for URL parameters
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const contract = urlParams.get('contract');
+            const token = urlParams.get('token');
+            
+            if (contract && token) {
+                document.getElementById('contractAddress').textContent = contract;
+                document.getElementById('tokenId').textContent = token;
+                
+                // Update the details section
+                document.getElementById('nftContract').textContent = contract;
+                document.getElementById('nftTokenId').textContent = token;
+                document.getElementById('openseaLink').href = `https://testnets.opensea.io/assets/sepolia/${contract}/${token}`;
+                document.getElementById('etherscanLink').href = `https://sepolia.etherscan.io/token/${contract}?a=${token}`;
+                
+                document.getElementById('nftDetails').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>

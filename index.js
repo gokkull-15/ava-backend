@@ -4,10 +4,12 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const CryptoJS = require('crypto-js');
 const pinataSDK = require('@pinata/sdk');
+const path = require('path');
 const { mintNFTWithIPFS } = require('./utils/nftContract');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Add connection status endpoint
 // Create express routes
@@ -612,6 +614,104 @@ app.post('/mint-nft-from-datajson', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to mint NFT from DataJson'
+    });
+  }
+});
+
+// Endpoint to provide a user-friendly page to import NFTs to MetaMask
+app.get('/import-nft/:contractAddress/:tokenId', async (req, res) => {
+  try {
+    const { contractAddress, tokenId } = req.params;
+    
+    if (!contractAddress || !tokenId) {
+      return res.status(400).send('Contract address and token ID are required');
+    }
+    
+    // Redirect to the HTML page with query parameters
+    res.redirect(`/add-to-metamask.html?contract=${contractAddress}&token=${tokenId}`);
+  } catch (error) {
+    console.error('Error redirecting to NFT import page:', error);
+    res.status(500).send('Error processing your request');
+  }
+});
+
+// Endpoint to provide MetaMask integration instructions
+app.get('/metamask-instructions/:chainId/:contractAddress/:tokenId', async (req, res) => {
+  try {
+    const { chainId, contractAddress, tokenId } = req.params;
+    
+    // Validate parameters
+    if (!chainId || !contractAddress || !tokenId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chain ID, contract address, and token ID are required'
+      });
+    }
+    
+    // Get the network name based on chain ID
+    let networkName = 'Unknown Network';
+    let networkRpcUrl = '';
+    let blockExplorerUrl = '';
+    let openseaUrl = '';
+    
+    switch (chainId) {
+      case '11155111': // Sepolia
+        networkName = 'Sepolia Test Network';
+        networkRpcUrl = 'https://eth-sepolia.public.blastapi.io';
+        blockExplorerUrl = `https://sepolia.etherscan.io/token/${contractAddress}?a=${tokenId}`;
+        openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`;
+        break;
+      case '1': // Ethereum Mainnet
+        networkName = 'Ethereum Mainnet';
+        networkRpcUrl = 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+        blockExplorerUrl = `https://etherscan.io/token/${contractAddress}?a=${tokenId}`;
+        openseaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
+        break;
+      // Add more networks as needed
+    }
+    
+    res.status(200).json({
+      success: true,
+      metamaskInstructions: {
+        title: "How to Add Your NFT to MetaMask",
+        steps: [
+          "1. Open your MetaMask wallet and make sure you're on the correct network.",
+          `2. Switch to the ${networkName} if you're not already on it.`,
+          "3. Scroll down and click on 'NFTs' tab.",
+          "4. Click on 'Import NFTs' button at the bottom.",
+          `5. Enter the NFT contract address: ${contractAddress}`,
+          `6. Enter the NFT Token ID: ${tokenId}`,
+          "7. Click 'Import' to add the NFT to your wallet."
+        ],
+        networkInfo: {
+          name: networkName,
+          chainId: chainId,
+          rpcUrl: networkRpcUrl
+        },
+        nftInfo: {
+          contractAddress: contractAddress,
+          tokenId: tokenId,
+          blockExplorerUrl: blockExplorerUrl,
+          openseaUrl: openseaUrl
+        },
+        addNetworkInstructions: [
+          "If you don't have the network in MetaMask:",
+          "1. Open MetaMask and click on the network dropdown at the top.",
+          "2. Click 'Add Network'.",
+          `3. Enter the RPC URL: ${networkRpcUrl}`,
+          `4. Enter Chain ID: ${chainId}`,
+          `5. Enter Network Name: ${networkName}`,
+          "6. Enter Symbol: ETH",
+          "7. Click 'Save'."
+        ]
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generating MetaMask instructions:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate MetaMask instructions'
     });
   }
 });

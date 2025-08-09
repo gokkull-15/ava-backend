@@ -5,8 +5,12 @@
       "src": "index.js", 
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".env.production", "setEnv.js"]
+        "includeFiles": [".env.production", "setEnv.js", "public/**"]
       }
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -15,6 +19,10 @@
     { "src": "/contract-data", "dest": "/index.js" },
     { "src": "/mint-nft", "dest": "/index.js" },
     { "src": "/mint-nft-from-datajson", "dest": "/index.js" },
+    { "src": "/nft/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/import-nft/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/metamask-instructions/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/add-to-metamask.html", "dest": "/public/add-to-metamask.html" },
     { "src": "/api/(.*)", "dest": "/index.js" },
     { "src": "/(.*)", "dest": "/index.js" }
   ]

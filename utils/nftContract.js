@@ -193,6 +193,9 @@ const mintNFTWithIPFS = async (recipientAddress, ipfsHash) => {
 
 // Helper function to generate MetaMask import instructions
 const getMetamaskInstructions = (contractAddress, tokenId) => {
+  // Sepolia Chain ID is 11155111
+  const chainId = "11155111";
+  
   return {
     addToMetamask: `To add this NFT to MetaMask, follow these steps:
     1. Open MetaMask and click on the 'NFTs' tab
@@ -203,7 +206,10 @@ const getMetamaskInstructions = (contractAddress, tokenId) => {
     networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
     contractAddress: contractAddress,
     tokenId: tokenId,
-    openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`
+    chainId: chainId,
+    openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+    etherscanUrl: `https://sepolia.etherscan.io/token/${contractAddress}?a=${tokenId}`,
+    instructionsUrl: `/metamask-instructions/${chainId}/${contractAddress}/${tokenId}`
   };
 };
 
