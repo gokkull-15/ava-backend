@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const CryptoJS = require('crypto-js');
+const pinataSDK = require('@pinata/sdk');
 
 const app = express();
 app.use(bodyParser.json());
@@ -25,9 +26,21 @@ app.get('/mongo-status', (req, res) => {
 // Schemas and Models
 const DataJsonSchema = new mongoose.Schema({
   data: mongoose.Schema.Types.Mixed,
+  ipfsHash: String,
+  pinataUrl: String,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
 });
 const DetailJsonSchema = new mongoose.Schema({
   detail: mongoose.Schema.Types.Mixed,
+  ipfsHash: String,
+  pinataUrl: String,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
 });
 const HashSchema = new mongoose.Schema({
   text: String,
@@ -45,6 +58,36 @@ const HashSchema = new mongoose.Schema({
 const DataJson = mongoose.model('DataJson', DataJsonSchema);
 const DetailJson = mongoose.model('DetailJson', DetailJsonSchema);
 const Hash = mongoose.model('Hash', HashSchema);
+
+// Initialize Pinata client
+const pinata = process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY 
+  ? pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY)
+  : null;
+
+// Function to pin JSON to IPFS via Pinata
+const pinJSONToIPFS = async (jsonData, name) => {
+  if (!pinata) {
+    throw new Error('Pinata API keys not configured');
+  }
+
+  try {
+    const options = {
+      pinataMetadata: {
+        name: name || 'ava-backend-data-' + Date.now()
+      }
+    };
+    
+    const result = await pinata.pinJSONToIPFS(jsonData, options);
+    return {
+      ipfsHash: result.IpfsHash,
+      pinataUrl: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`,
+      timestamp: new Date()
+    };
+  } catch (error) {
+    console.error('Error pinning to IPFS:', error);
+    throw new Error(`Failed to pin to IPFS: ${error.message}`);
+  }
+};
 
 // Connect to MongoDB with a connection timeout
 let mongoConnected = false;
@@ -72,24 +115,84 @@ connectWithTimeout();
 // Endpoints
 app.post('/datajson', async (req, res) => {
   try {
+    const data = req.body;
+    let ipfsResult = null;
+    let savedData = null;
+    
+    // Try to pin to IPFS if Pinata is configured
+    try {
+      if (pinata) {
+        ipfsResult = await pinJSONToIPFS(data, 'ava-data-' + Date.now());
+      }
+    } catch (ipfsError) {
+      console.error('IPFS error:', ipfsError.message);
+    }
+    
+    // Try to save to MongoDB if connected
+    if (mongoConnected) {
+      try {
+        const dataEntry = new DataJson({
+          data,
+          ...(ipfsResult || {})
+        });
+        savedData = await dataEntry.save();
+      } catch (dbErr) {
+        console.error('Database error:', dbErr.message);
+      }
+    }
+    
     return res.status(200).json({
       message: 'Request received',
-      received: req.body,
+      received: data,
+      ipfs: ipfsResult,
+      saved: savedData ? true : false,
+      id: savedData?._id || null,
       mongoStatus: mongoConnected ? 1 : 0
     });
   } catch (err) {
+    console.error('Error in datajson endpoint:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/detailjson', async (req, res) => {
   try {
+    const detail = req.body;
+    let ipfsResult = null;
+    let savedData = null;
+    
+    // Try to pin to IPFS if Pinata is configured
+    try {
+      if (pinata) {
+        ipfsResult = await pinJSONToIPFS(detail, 'ava-detail-' + Date.now());
+      }
+    } catch (ipfsError) {
+      console.error('IPFS error:', ipfsError.message);
+    }
+    
+    // Try to save to MongoDB if connected
+    if (mongoConnected) {
+      try {
+        const detailEntry = new DetailJson({
+          detail,
+          ...(ipfsResult || {})
+        });
+        savedData = await detailEntry.save();
+      } catch (dbErr) {
+        console.error('Database error:', dbErr.message);
+      }
+    }
+    
     return res.status(200).json({
       message: 'Request received',
-      received: req.body,
+      received: detail,
+      ipfs: ipfsResult,
+      saved: savedData ? true : false,
+      id: savedData?._id || null,
       mongoStatus: mongoConnected ? 1 : 0
     });
   } catch (err) {
+    console.error('Error in detailjson endpoint:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -148,6 +251,54 @@ app.post('/hash', async (req, res) => {
     
   } catch (err) {
     console.error('Error in hash endpoint:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/datajson', async (req, res) => {
+  try {
+    if (!mongoConnected) {
+      return res.status(200).json({
+        message: 'MongoDB not connected',
+        data: [],
+        mongoStatus: 0
+      });
+    }
+    
+    const data = await DataJson.find().sort({ timestamp: -1 }).limit(10);
+    
+    return res.status(200).json({
+      data,
+      count: data.length,
+      mongoStatus: 1
+    });
+    
+  } catch (err) {
+    console.error('Error retrieving data:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/detailjson', async (req, res) => {
+  try {
+    if (!mongoConnected) {
+      return res.status(200).json({
+        message: 'MongoDB not connected',
+        details: [],
+        mongoStatus: 0
+      });
+    }
+    
+    const details = await DetailJson.find().sort({ timestamp: -1 }).limit(10);
+    
+    return res.status(200).json({
+      details,
+      count: details.length,
+      mongoStatus: 1
+    });
+    
+  } catch (err) {
+    console.error('Error retrieving details:', err);
     res.status(500).json({ error: err.message });
   }
 });
