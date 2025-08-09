@@ -6,6 +6,6 @@
   "routes": [
     { "src": "/datajson", "dest": "/index.js" },
     { "src": "/detailjson", "dest": "/index.js" },
-    { "src": "/hash", "dest": "/index.js" }
+    { "src": "/contract-data", "dest": "/index.js" }
   ]
 }
