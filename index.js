@@ -9,8 +9,69 @@ const app = express();
 app.use(bodyParser.json());
 
 // Add connection status endpoint
+// Create express routes
 app.get('/', (req, res) => {
-  res.status(200).send('Server is running');
+  res.status(200).json({ message: 'API working' });
+});
+
+// Convert DataJson to ContractData
+app.post('/api/convert-datajson-to-contract', async (req, res) => {
+  try {
+    const { dataJsonId } = req.body;
+    
+    if (!dataJsonId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing dataJsonId in request body' 
+      });
+    }
+    
+    if (!mongoConnected) {
+      return res.status(503).json({
+        success: false,
+        error: 'MongoDB not connected'
+      });
+    }
+    
+    // Find the DataJson entry
+    const dataJsonEntry = await DataJson.findById(dataJsonId);
+    
+    if (!dataJsonEntry) {
+      return res.status(404).json({
+        success: false,
+        error: `DataJson with ID ${dataJsonId} not found`
+      });
+    }
+    
+    // Extract the data and pin it to IPFS
+    const ipfsResult = await pinJSONToIPFS(dataJsonEntry.data, 'contract-data-from-datajson-' + Date.now());
+    
+    // Create and save the ContractData entry
+    const contractEntry = new ContractData({
+      data: dataJsonEntry.data,
+      ...(ipfsResult || {}),
+      timestamp: new Date()
+    });
+    
+    const savedEntry = await contractEntry.save();
+    
+    res.status(200).json({
+      success: true,
+      contractData: {
+        id: savedEntry._id,
+        ipfsHash: ipfsResult ? ipfsResult.ipfsHash : null,
+        pinataUrl: ipfsResult ? ipfsResult.pinataUrl : null,
+        timestamp: savedEntry.timestamp
+      },
+      originalDataJsonId: dataJsonId
+    });
+  } catch (error) {
+    console.error('Error converting DataJson to ContractData:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to convert DataJson to ContractData' 
+    });
+  }
 });
 
 // Add simple diagnostic endpoint
@@ -26,8 +87,6 @@ app.get('/mongo-status', (req, res) => {
 // Schemas and Models
 const DataJsonSchema = new mongoose.Schema({
   data: mongoose.Schema.Types.Mixed,
-  ipfsHash: String,
-  pinataUrl: String,
   timestamp: {
     type: Date,
     default: Date.now
@@ -60,7 +119,7 @@ const ContractData = mongoose.model('ContractData', ContractDataSchema);
 let pinata = null;
 try {
   if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
-    pinata = pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY);
+    pinata = new pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY);
     console.log('Pinata client initialized');
   } else {
     console.log('Pinata API keys not configured');
@@ -116,6 +175,8 @@ const connectWithTimeout = () => {
   });
 };
 
+// Not needed anymore - functionality is now in the endpoint directly
+
 // Try to connect to MongoDB, but don't block server startup
 connectWithTimeout();
 
@@ -123,18 +184,16 @@ connectWithTimeout();
 app.post('/datajson', async (req, res) => {
   try {
     const data = req.body;
-    let ipfsResult = null;
     let savedData = null;
     
-    // Try to pin to IPFS
-    ipfsResult = await pinJSONToIPFS(data, 'ava-data-' + Date.now());
+    // Do NOT pin to IPFS for datajson endpoint per requirement
     
     // Try to save to MongoDB if connected
     if (mongoConnected) {
       try {
         const dataEntry = new DataJson({
           data,
-          ...(ipfsResult || {})
+          timestamp: new Date() // Just include timestamp
         });
         savedData = await dataEntry.save();
       } catch (dbErr) {
@@ -145,7 +204,6 @@ app.post('/datajson', async (req, res) => {
     return res.status(200).json({
       message: 'Request received',
       received: data,
-      ipfs: ipfsResult,
       saved: savedData ? true : false,
       id: savedData?._id || null,
       mongoStatus: mongoConnected ? 1 : 0
@@ -195,8 +253,26 @@ app.post('/detailjson', async (req, res) => {
 // Contract data endpoint
 app.post('/contract-data', async (req, res) => {
   try {
-    // First, we need to retrieve data from datajson endpoint or from the request
-    const data = req.body;
+    // First check if there's any dataJson reference
+    const { dataJsonId, ...otherData } = req.body;
+    let dataJsonContent = null;
+    
+    // If dataJsonId is provided, try to fetch that data from MongoDB
+    if (dataJsonId && mongoConnected) {
+      try {
+        const dataJsonEntry = await DataJson.findById(dataJsonId);
+        if (dataJsonEntry) {
+          dataJsonContent = dataJsonEntry.data;
+        } else {
+          console.log(`No DataJson found with id ${dataJsonId}`);
+        }
+      } catch (err) {
+        console.error('Error fetching DataJson:', err.message);
+      }
+    }
+    
+    // Combine dataJsonContent with other data or use just the request body
+    const data = dataJsonContent ? { ...otherData, dataJsonContent } : req.body;
     
     if (!data || Object.keys(data).length === 0) {
       return res.status(400).json({ error: 'Data is required' });
