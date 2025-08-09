@@ -5,6 +5,7 @@
   ],
   "routes": [
     { "src": "/datajson", "dest": "/index.js" },
-    { "src": "/detailjson", "dest": "/index.js" }
+    { "src": "/detailjson", "dest": "/index.js" },
+    { "src": "/hash", "dest": "/index.js" }
   ]
 }
