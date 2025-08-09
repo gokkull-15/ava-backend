@@ -463,7 +463,41 @@ app.post('/mint-nft', async (req, res) => {
     const result = await mintNFTWithIPFS(recipientAddress, formattedIpfsHash);
     
     if (result.success) {
-      res.status(200).json(result);
+      // Get the host for dynamic URL generation
+      const host = req.get('host') || 'ava-backend-sepia.vercel.app';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
+      const chainId = 'sepolia'; // Default to Sepolia testnet
+      const contractAddress = result.contractAddress || process.env.NFT_CONTRACT_ADDRESS;
+      const tokenId = result.tokenId;
+
+      // Add MetaMask integration URLs to the response
+      const metamaskInfo = {
+        addToMetamask: `To add this NFT to MetaMask, follow these steps:
+        1. Open MetaMask and click on the 'NFTs' tab
+        2. Click 'Import NFT'
+        3. Enter the Contract Address: ${contractAddress}
+        4. Enter the Token ID: ${tokenId}
+        5. Click 'Import'`,
+        networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
+        contractAddress: contractAddress,
+        tokenId: tokenId,
+        openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+        // Add direct links for MetaMask integration
+        importUrl: `${baseUrl}/add-nft/${chainId}/${contractAddress}/${tokenId}`,
+        directImportUrl: `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`,
+        deepLink: `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`
+      };
+
+      // Return the enhanced result
+      res.status(200).json({
+        ...result,
+        metamaskInfo,
+        metamaskIntegration: {
+          openPage: `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`,
+          openMobileApp: `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`
+        }
+      });
     } else {
       res.status(500).json(result);
     }
@@ -635,11 +669,45 @@ app.post('/mint-nft-from-datajson', async (req, res) => {
       
       await contractEntry.save();
       
+      // Get the host for dynamic URL generation
+      const host = req.get('host') || 'ava-backend-sepia.vercel.app';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
+      const chainId = 'sepolia'; // Default to Sepolia testnet
+      const contractAddress = mintResult.contractAddress || process.env.NFT_CONTRACT_ADDRESS;
+      const tokenId = mintResult.tokenId;
+
+      // Add MetaMask integration URLs to the response
+      const metamaskInfo = {
+        addToMetamask: `To add this NFT to MetaMask, follow these steps:
+        1. Open MetaMask and click on the 'NFTs' tab
+        2. Click 'Import NFT'
+        3. Enter the Contract Address: ${contractAddress}
+        4. Enter the Token ID: ${tokenId}
+        5. Click 'Import'`,
+        networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
+        contractAddress: contractAddress,
+        tokenId: tokenId,
+        openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`,
+        // Add direct links for MetaMask integration
+        importUrl: `${baseUrl}/add-nft/${chainId}/${contractAddress}/${tokenId}`,
+        directImportUrl: `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`,
+        deepLink: `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`
+      };
+      
+      // Return enhanced result with MetaMask integration links
       res.status(200).json({
         success: true,
-        nft: mintResult,
+        nft: {
+          ...mintResult,
+          metamaskInfo
+        },
         ipfs: ipfsResult,
-        originalDataJsonId: dataJsonId
+        originalDataJsonId: dataJsonId,
+        metamaskIntegration: {
+          openPage: `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`,
+          openMobileApp: `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`
+        }
       });
     } else {
       res.status(500).json({
@@ -784,6 +852,20 @@ app.get('/metamask-instructions/:chainId/:contractAddress/:tokenId', async (req,
       success: false,
       error: error.message || 'Failed to generate MetaMask instructions'
     });
+  }
+});
+
+// Success page for minted NFTs
+app.get('/mint-success/:chainId/:contractAddress/:tokenId', async (req, res) => {
+  try {
+    const { chainId, contractAddress, tokenId } = req.params;
+    const txHash = req.query.txHash || '';
+    
+    // Redirect to the success page with parameters
+    res.redirect(`/mint-success.html?chainId=${chainId}&contract=${contractAddress}&tokenId=${tokenId}&txHash=${txHash}`);
+  } catch (error) {
+    console.error('Error redirecting to success page:', error);
+    res.status(500).send('Error processing your request');
   }
 });
 

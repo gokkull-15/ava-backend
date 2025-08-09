@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Minted Successfully</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .success-box {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        h1 { color: #28a745; }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #28a745;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .button {
+            background-color: #f6851b; /* MetaMask orange */
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button.secondary {
+            background-color: #6c757d;
+        }
+        #countdown {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .details {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .details code {
+            background-color: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-box">
+        <h1>NFT Minted Successfully! 🎉</h1>
+        <p>Your NFT has been minted on the blockchain and is ready to be added to MetaMask.</p>
+        
+        <div id="auto-redirect">
+            <p>You will be redirected to the MetaMask import page in <span id="countdown">5</span> seconds...</p>
+            <div class="loading"></div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a href="#" id="importNow" class="button">Add to MetaMask Now</a>
+            <a href="#" id="cancelRedirect" class="button secondary">Cancel Auto-Redirect</a>
+        </div>
+    </div>
+    
+    <div class="details">
+        <h2>NFT Details:</h2>
+        <p><strong>Contract Address:</strong> <code id="contractAddress">Loading...</code></p>
+        <p><strong>Token ID:</strong> <code id="tokenId">Loading...</code></p>
+        <p><strong>Network:</strong> <span id="network">Loading...</span></p>
+        <p><strong>Transaction Hash:</strong> <code id="txHash">Loading...</code></p>
+    </div>
+    
+    <div>
+        <h3>Options:</h3>
+        <p><a href="#" id="viewOnOpenSea" target="_blank">View on OpenSea</a></p>
+        <p id="mobileOption" style="display: none;">
+            <a href="#" id="openInMetaMaskMobile" class="button">Open in MetaMask Mobile</a>
+        </p>
+    </div>
+    
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const chainId = urlParams.get('chainId') || 'sepolia';
+        const contractAddress = urlParams.get('contract');
+        const tokenId = urlParams.get('tokenId');
+        const txHash = urlParams.get('txHash');
+        
+        // Set network information
+        let networkName = 'Sepolia Test Network';
+        if (chainId === '1' || chainId === 'mainnet') {
+            networkName = 'Ethereum Mainnet';
+        }
+        
+        // Populate the fields
+        document.getElementById('contractAddress').textContent = contractAddress || 'Not available';
+        document.getElementById('tokenId').textContent = tokenId || 'Not available';
+        document.getElementById('network').textContent = networkName;
+        document.getElementById('txHash').textContent = txHash || 'Not available';
+        
+        // Set up the links
+        const baseUrl = window.location.origin;
+        const importUrl = `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`;
+        const mobileDeepLink = `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`;
+        let openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`;
+        if (chainId === '1' || chainId === 'mainnet') {
+            openseaUrl = `https://opensea.io/assets/ethereum/${contractAddress}/${tokenId}`;
+        }
+        
+        document.getElementById('importNow').href = importUrl;
+        document.getElementById('viewOnOpenSea').href = openseaUrl;
+        
+        // Check if we're on mobile
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            document.getElementById('mobileOption').style.display = 'block';
+            document.getElementById('openInMetaMaskMobile').href = mobileDeepLink;
+        }
+        
+        // Countdown for auto-redirect
+        let countdown = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const redirectTimer = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(redirectTimer);
+                window.location.href = importUrl;
+            }
+        }, 1000);
+        
+        // Cancel auto-redirect
+        document.getElementById('cancelRedirect').addEventListener('click', function(e) {
+            e.preventDefault();
+            clearInterval(redirectTimer);
+            document.getElementById('auto-redirect').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

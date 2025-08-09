@@ -148,6 +148,7 @@ const mintNFTWithIPFS = async (recipientAddress, ipfsHash) => {
         success: true,
         txHash: receipt.hash,
         tokenId: tokenId,
+        contractAddress: contractAddress, // Include contract address explicitly
         recipient: mintedEvent.args.recipient,
         tokenURI: mintedEvent.args.tokenURI,
         blockNumber: receipt.blockNumber,
@@ -159,6 +160,7 @@ const mintNFTWithIPFS = async (recipientAddress, ipfsHash) => {
         success: true,
         txHash: receipt.hash,
         tokenId: tokenId,
+        contractAddress: contractAddress, // Include contract address explicitly
         recipient: transferEvent.args.to,
         transferFrom: transferEvent.args.from,
         blockNumber: receipt.blockNumber,

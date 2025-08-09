@@ -25,8 +25,10 @@
     { "src": "/add-nft/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/metamask-deeplink/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/metamask-instructions/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
+    { "src": "/mint-success/(?<chainId>[^/]+)/(?<contractAddress>[^/]+)/(?<tokenId>[^/]+)", "dest": "/index.js" },
     { "src": "/add-to-metamask.html", "dest": "/public/add-to-metamask.html" },
     { "src": "/mm-watch-asset.html", "dest": "/public/mm-watch-asset.html" },
+    { "src": "/mint-success.html", "dest": "/public/mint-success.html" },
     { "src": "/api/(.*)", "dest": "/index.js" },
     { "src": "/(.*)", "dest": "/index.js" }
   ]
