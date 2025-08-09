@@ -1,0 +1,272 @@
+{
+	"info": {
+		"_postman_id": "e9d40685-b276-858d-ac38-fb3f454083bb",
+		"name": "AVA Backend API",
+		"description": "Collection for the AVA Backend API with MongoDB and IPFS Pinata integration.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Server Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "Check if the server is running."
+			},
+			"response": []
+		},
+		{
+			"name": "Data JSON - GET",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/datajson",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"datajson"
+					]
+				},
+				"description": "Retrieves all data entries stored in MongoDB with IPFS information."
+			},
+			"response": []
+		},
+		{
+			"name": "Data JSON - POST",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"data\": \"This is test data\",\n    \"example\": \"Sample content\",\n    \"nested\": {\n        \"field1\": \"value1\",\n        \"field2\": 42\n    }\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/datajson",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"datajson"
+					]
+				},
+				"description": "Send JSON data to be stored in MongoDB and pinned to IPFS."
+			},
+			"response": []
+		},
+		{
+			"name": "Detail JSON - GET",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/detailjson",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"detailjson"
+					]
+				},
+				"description": "Retrieves all detail entries stored in MongoDB with IPFS information."
+			},
+			"response": []
+		},
+		{
+			"name": "Detail JSON - POST",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"Test Title\",\n    \"description\": \"This is a detailed description for testing\",\n    \"author\": \"Postman User\",\n    \"date\": \"2025-08-09\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/detailjson",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"detailjson"
+					]
+				},
+				"description": "Send detail JSON data to be stored in MongoDB and pinned to IPFS."
+			},
+			"response": []
+		},
+		{
+			"name": "Hash - GET",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"hash"
+					]
+				},
+				"description": "Retrieves all hash entries stored in MongoDB."
+			},
+			"response": []
+		},
+		{
+			"name": "Hash - SHA256",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"sha256\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"hash"
+					]
+				},
+				"description": "Generate SHA256 hash of provided text."
+			},
+			"response": []
+		},
+		{
+			"name": "Hash - MD5",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"md5\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"hash"
+					]
+				},
+				"description": "Generate MD5 hash of provided text."
+			},
+			"response": []
+		},
+		{
+			"name": "Hash - SHA1",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\": \"This is a test text to be hashed\",\n    \"algorithm\": \"sha1\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/hash",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"hash"
+					]
+				},
+				"description": "Generate SHA1 hash of provided text."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://ava-backend-sepia.vercel.app",
+			"type": "string",
+			"description": "Base URL for the API endpoints"
+		}
+	]
+}
