@@ -249,7 +249,12 @@ const getNFTDetails = async (tokenId) => {
           tokenId,
           owner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
           tokenURI: `ipfs://QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ`,
-          contractAddress
+          contractAddress,
+          metadata: {
+            name: `Test NFT #${tokenId}`,
+            description: "This is a test NFT that demonstrates MetaMask integration",
+            image: "https://gateway.pinata.cloud/ipfs/QmUFfU2K5gkwcwhnJbVVwacCUjGPF9YgJFQAMeGMjAV4ew"
+          }
         };
       }
       return null;
@@ -257,19 +262,64 @@ const getNFTDetails = async (tokenId) => {
     
     // Get token URI
     let tokenURI;
+    let metadata = null;
     try {
       tokenURI = await contract.tokenURI(tokenId);
+      
+      // Try to fetch metadata if it's an IPFS URI
+      if (tokenURI.startsWith('ipfs://')) {
+        const ipfsHash = tokenURI.replace('ipfs://', '');
+        try {
+          // Try multiple IPFS gateways
+          const ipfsGateways = [
+            `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+            `https://ipfs.io/ipfs/${ipfsHash}`,
+            `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`
+          ];
+          
+          let metadataResponse = null;
+          for (const gateway of ipfsGateways) {
+            try {
+              // Using node-fetch or axios if available, otherwise skip metadata fetch
+              const fetch = require('node-fetch');
+              metadataResponse = await fetch(gateway, { timeout: 5000 });
+              if (metadataResponse.ok) {
+                metadata = await metadataResponse.json();
+                break;
+              }
+            } catch (e) {
+              console.log(`Failed to fetch from ${gateway}: ${e.message}`);
+            }
+          }
+        } catch (fetchError) {
+          console.error(`Error fetching metadata from IPFS:`, fetchError.message);
+        }
+      }
     } catch (uriError) {
       console.error(`Error getting URI for token ${tokenId}:`, uriError.message);
       tokenURI = `ipfs://unknown-token-${tokenId}`;
     }
     
-    return {
+    // Create a standardized NFT details object with metadata if available
+    const result = {
       tokenId,
       owner,
       tokenURI,
       contractAddress
     };
+    
+    // If we have metadata, add it to the result
+    if (metadata) {
+      result.metadata = metadata;
+      
+      // Process image URL if it's an IPFS URL
+      if (metadata.image && metadata.image.startsWith('ipfs://')) {
+        const imageHash = metadata.image.replace('ipfs://', '');
+        result.metadata.httpImage = `https://gateway.pinata.cloud/ipfs/${imageHash}`;
+      }
+    }
+    
+    return result;
   } catch (error) {
     console.error(`Error getting NFT details for token ${tokenId}:`, error);
     
@@ -280,7 +330,12 @@ const getNFTDetails = async (tokenId) => {
         tokenId,
         owner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         tokenURI: `ipfs://QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ`,
-        contractAddress
+        contractAddress,
+        metadata: {
+          name: `Test NFT #${tokenId}`,
+          description: "This is a test NFT that demonstrates MetaMask integration",
+          image: "https://gateway.pinata.cloud/ipfs/QmUFfU2K5gkwcwhnJbVVwacCUjGPF9YgJFQAMeGMjAV4ew"
+        }
       };
     }
     
