@@ -12,12 +12,22 @@ app.get('/', (req, res) => {
 });
 
 // Connect to MongoDB with improved error handling
-mongoose.connect(process.env.MONGODB_URI, {
+console.log('Attempting to connect to MongoDB...');
+const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://gokkull04:gokul%40123@cluster0.pe15z0t.mongodb.net/ava-lang';
+console.log('Using connection string (masked): ' + mongoURI.replace(/\/\/.*@/, '//****:****@'));
+
+mongoose.connect(mongoURI, {
   serverSelectionTimeoutMS: 50000, // Timeout after 50s instead of 30s
-  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity,
+  retryWrites: true,
+  w: 'majority'
 })
 .then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+.catch(err => {
+  console.error('MongoDB connection error details:', err);
+  console.error('MongoDB connection error code:', err.code);
+  console.error('MongoDB connection error name:', err.name);
+});
 
 const DataJsonSchema = new mongoose.Schema({
   data: mongoose.Schema.Types.Mixed,
