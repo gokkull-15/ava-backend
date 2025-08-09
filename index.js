@@ -42,14 +42,11 @@ const DetailJsonSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-const HashSchema = new mongoose.Schema({
-  text: String,
-  hash: String,
-  algorithm: {
-    type: String,
-    default: 'SHA256'
-  },
-  createdAt: {
+const ContractDataSchema = new mongoose.Schema({
+  data: mongoose.Schema.Types.Mixed,
+  ipfsHash: String,
+  pinataUrl: String,
+  timestamp: {
     type: Date,
     default: Date.now
   }
@@ -57,7 +54,7 @@ const HashSchema = new mongoose.Schema({
 
 const DataJson = mongoose.model('DataJson', DataJsonSchema);
 const DetailJson = mongoose.model('DetailJson', DetailJsonSchema);
-const Hash = mongoose.model('Hash', HashSchema);
+const ContractData = mongoose.model('ContractData', ContractDataSchema);
 
 // Initialize Pinata client
 let pinata = null;
@@ -195,34 +192,31 @@ app.post('/detailjson', async (req, res) => {
   }
 });
 
-// New hash endpoints
-app.post('/hash', async (req, res) => {
+// Contract data endpoint
+app.post('/contract-data', async (req, res) => {
   try {
-    const { text, algorithm = 'SHA256' } = req.body;
+    // First, we need to retrieve data from datajson endpoint or from the request
+    const data = req.body;
     
-    if (!text) {
-      return res.status(400).json({ error: 'Text to hash is required' });
+    if (!data || Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'Data is required' });
     }
     
-    let hash;
-    switch (algorithm.toUpperCase()) {
-      case 'MD5':
-        hash = CryptoJS.MD5(text).toString();
-        break;
-      case 'SHA1':
-        hash = CryptoJS.SHA1(text).toString();
-        break;
-      case 'SHA256':
-      default:
-        hash = CryptoJS.SHA256(text).toString();
+    // Pin the data to IPFS
+    const ipfsResult = await pinJSONToIPFS(data, 'contract-data-' + Date.now());
+    
+    // If IPFS pinning failed, return an error
+    if (!ipfsResult) {
+      return res.status(500).json({
+        error: 'Failed to pin data to IPFS',
+        mongoStatus: mongoConnected ? 1 : 0
+      });
     }
     
-    // Create hash entry
-    const hashEntry = {
-      text,
-      hash,
-      algorithm: algorithm.toUpperCase(),
-      createdAt: new Date()
+    // Create contract data entry
+    const contractEntry = {
+      data,
+      ...ipfsResult
     };
     
     // Try to save if MongoDB is connected
@@ -230,25 +224,27 @@ app.post('/hash', async (req, res) => {
     let id = null;
     if (mongoConnected) {
       try {
-        const savedEntry = await new Hash(hashEntry).save();
+        const savedEntry = await new ContractData(contractEntry).save();
         if (savedEntry) {
           saved = true;
           id = savedEntry._id;
         }
       } catch (dbErr) {
-        console.log('Error saving to database:', dbErr.message);
+        console.error('Database error:', dbErr.message);
       }
     }
     
     return res.status(201).json({
-      ...hashEntry,
+      message: 'Contract data processed',
+      data,
+      ipfs: ipfsResult,
       saved,
       id,
       mongoStatus: mongoConnected ? 1 : 0
     });
     
   } catch (err) {
-    console.error('Error in hash endpoint:', err);
+    console.error('Error in contract-data endpoint:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -301,26 +297,26 @@ app.get('/detailjson', async (req, res) => {
   }
 });
 
-app.get('/hash', async (req, res) => {
+app.get('/contract-data', async (req, res) => {
   try {
     if (!mongoConnected) {
       return res.status(200).json({
         message: 'MongoDB not connected',
-        hashes: [],
+        contractData: [],
         mongoStatus: 0
       });
     }
     
-    const hashes = await Hash.find().sort({ createdAt: -1 }).limit(10);
+    const contractData = await ContractData.find().sort({ timestamp: -1 }).limit(10);
     
     return res.status(200).json({
-      hashes,
-      count: hashes.length,
+      contractData,
+      count: contractData.length,
       mongoStatus: 1
     });
     
   } catch (err) {
-    console.error('Error retrieving hashes:', err);
+    console.error('Error retrieving contract data:', err);
     res.status(500).json({ error: err.message });
   }
 });
