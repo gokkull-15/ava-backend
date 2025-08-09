@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "e9d40685-b276-858d-ac38-fb3f454083bb",
 		"name": "AVA Backend API",
-		"description": "Collection for the AVA Backend API with MongoDB and IPFS Pinata integration.",
+		"description": "Collection for the AVA Backend API with MongoDB and IPFS Pinata integration. Updated with new conversion endpoint.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -74,7 +74,7 @@
 						"datajson"
 					]
 				},
-				"description": "Send JSON data to be stored in MongoDB and pinned to IPFS."
+				"description": "Send JSON data to be stored in MongoDB (no IPFS)."
 			},
 			"response": []
 		},
@@ -177,6 +177,58 @@
 					]
 				},
 				"description": "Send contract data to be stored in MongoDB and pinned to IPFS."
+			},
+			"response": []
+		},
+		{
+			"name": "MongoDB Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/mongo-status",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"mongo-status"
+					]
+				},
+				"description": "Check the MongoDB connection status."
+			},
+			"response": []
+		},
+		{
+			"name": "Convert DataJson to ContractData",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"dataJsonId\": \"YOUR_DATAJSON_ID_HERE\"\n}"
+				},
+				"url": {
+					"raw": "https://ava-backend-sepia.vercel.app/api/convert-datajson-to-contract",
+					"protocol": "https",
+					"host": [
+						"ava-backend-sepia",
+						"vercel",
+						"app"
+					],
+					"path": [
+						"api",
+						"convert-datajson-to-contract"
+					]
+				},
+				"description": "Convert an existing DataJson entry to a ContractData entry by pinning it to IPFS."
 			},
 			"response": []
 		}
