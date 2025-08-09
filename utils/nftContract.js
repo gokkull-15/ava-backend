@@ -15,8 +15,25 @@ const contractAddress = process.env.NFT_CONTRACT_ADDRESS || "0x5FbDB2315678afecb
 
 // Initialize a provider
 const getProvider = () => {
-  const rpcUrl = process.env.SEPOLIA_RPC_URL || "https://rpc.ankr.com/eth_sepolia";
-  return new ethers.JsonRpcProvider(rpcUrl);
+  // Try multiple RPC URLs in case one fails
+  const rpcUrls = [
+    process.env.SEPOLIA_RPC_URL,
+    "https://eth-sepolia.public.blastapi.io",
+    "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", // Public Infura key
+    "https://rpc2.sepolia.org",
+    "https://rpc.sepolia.org"
+  ];
+  
+  // Use the first available RPC URL
+  for (const url of rpcUrls) {
+    if (url) {
+      console.log(`Trying RPC URL: ${url}`);
+      return new ethers.JsonRpcProvider(url);
+    }
+  }
+  
+  // Default fallback
+  return new ethers.JsonRpcProvider("https://eth-sepolia.public.blastapi.io");
 };
 
 // Create a wallet instance using the private key
@@ -81,9 +98,22 @@ const mintNFTWithIPFS = async (recipientAddress, ipfsHash) => {
     
   } catch (error) {
     console.error("Error minting NFT:", error);
+    
+    // Check for common RPC errors
+    let errorMessage = error.message || "Failed to mint NFT";
+    
+    if (errorMessage.includes("Unauthorized") || errorMessage.includes("API key")) {
+      errorMessage = "RPC authentication failed. Please check your RPC URL configuration.";
+    } else if (errorMessage.includes("network") || errorMessage.includes("connect")) {
+      errorMessage = "Network error. Please check your internet connection and RPC URL.";
+    } else if (errorMessage.includes("insufficient funds")) {
+      errorMessage = "The wallet does not have enough ETH to pay for gas fees.";
+    }
+    
     return {
       success: false,
-      error: error.message || "Failed to mint NFT"
+      error: errorMessage,
+      details: error.message
     };
   }
 };

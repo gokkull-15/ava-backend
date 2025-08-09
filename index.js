@@ -12,7 +12,36 @@ app.use(bodyParser.json());
 // Add connection status endpoint
 // Create express routes
 app.get('/', (req, res) => {
-  res.status(200).json({ message: 'API working' });
+  res.json({ message: 'API working' });
+});
+
+app.get('/healthcheck', async (req, res) => {
+  try {
+    // Check MongoDB connection
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
+    // Check environment variables
+    const envVars = {
+      mongodb: process.env.MONGODB_URI ? 'configured' : 'missing',
+      pinata: process.env.PINATA_API_KEY ? 'configured' : 'missing',
+      nftContract: process.env.NFT_CONTRACT_ADDRESS ? 'configured' : 'missing',
+      rpcUrl: process.env.SEPOLIA_RPC_URL ? 'configured' : 'missing',
+      privateKey: process.env.PRIVATE_KEY ? 'configured' : 'missing'
+    };
+    
+    res.json({
+      status: 'healthy',
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      database: dbStatus,
+      environment: envVars
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error.message
+    });
+  }
 });
 
 // Convert DataJson to ContractData
