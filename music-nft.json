@@ -1,0 +1,77 @@
+{
+  "name": "Ethereal Echo - Summer Nights",
+  "description": "Ethereal Echo presents 'Summer Nights', an exclusive audio NFT featuring a downtempo electronica track produced specifically for the blockchain. This NFT includes full ownership rights to the master recording, high-quality audio file, and exclusive content access.",
+  "image": "https://images.pexels.com/photos/1647962/pexels-photo-1647962.jpeg",
+  "external_url": "https://example.com/ethereal-echo/summer-nights",
+  "animation_url": "https://example.com/audio/ethereal-echo-summer-nights.mp3",
+  "attributes": [
+    {
+      "trait_type": "Artist",
+      "value": "Ethereal Echo"
+    },
+    {
+      "trait_type": "Genre",
+      "value": "Downtempo Electronic"
+    },
+    {
+      "trait_type": "Duration",
+      "value": "4:32"
+    },
+    {
+      "trait_type": "BPM",
+      "value": 98
+    },
+    {
+      "trait_type": "Release Type",
+      "value": "Single"
+    },
+    {
+      "trait_type": "Edition",
+      "value": "Limited"
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Edition Number",
+      "value": 7
+    },
+    {
+      "display_type": "number",
+      "trait_type": "Total Editions",
+      "value": 50
+    },
+    {
+      "display_type": "date",
+      "trait_type": "Release Date",
+      "value": 1754763988
+    }
+  ],
+  "properties": {
+    "audio": {
+      "format": "MP3",
+      "sample_rate": "320kbps",
+      "lossless_url": "https://example.com/audio/ethereal-echo-summer-nights-lossless.wav"
+    },
+    "files": [
+      {
+        "uri": "https://example.com/audio/ethereal-echo-summer-nights.mp3",
+        "type": "audio/mpeg"
+      },
+      {
+        "uri": "https://example.com/images/ethereal-echo-summer-nights-artwork.png",
+        "type": "image/png"
+      },
+      {
+        "uri": "https://example.com/documents/ethereal-echo-summer-nights-license.pdf",
+        "type": "application/pdf"
+      }
+    ],
+    "license": "Exclusive ownership rights to the master recording, with creator retaining publishing rights",
+    "creators": [
+      {
+        "name": "Ethereal Echo",
+        "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "share": 100
+      }
+    ]
+  }
+}

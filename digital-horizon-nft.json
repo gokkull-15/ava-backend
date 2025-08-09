@@ -1,0 +1,64 @@
+{
+  "name": "Digital Horizon #042",
+  "description": "Digital Horizon is a procedurally generated landscape from the virtual world of Synthia. Each NFT represents a unique coordinate in this expansive digital universe, with terrain and atmospheric conditions that evolve over time.",
+  "image": "https://images.pexels.com/photos/1261728/pexels-photo-1261728.jpeg",
+  "external_url": "https://example.com/digital-horizon/042",
+  "background_color": "0D1128",
+  "animation_url": "https://example.com/animations/digital-horizon-042.mp4",
+  "youtube_url": "https://www.youtube.com/watch?v=example",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Digital Horizons"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Epic"
+    },
+    {
+      "trait_type": "Biome",
+      "value": "Crystalline Mesa"
+    },
+    {
+      "trait_type": "Weather System",
+      "value": "Aurora Storms"
+    },
+    {
+      "trait_type": "Time Period",
+      "value": "Eternal Dusk"
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "Terrain Complexity",
+      "value": 78
+    },
+    {
+      "display_type": "date",
+      "trait_type": "Generated On",
+      "value": 1754763845
+    }
+  ],
+  "properties": {
+    "coordinates": {
+      "x": 42.5,
+      "y": 78.3,
+      "z": -19.2
+    },
+    "files": [
+      {
+        "uri": "https://example.com/models/digital-horizon-042.glb",
+        "type": "model/gltf-binary"
+      },
+      {
+        "uri": "https://example.com/soundscapes/digital-horizon-042.mp3",
+        "type": "audio/mpeg"
+      }
+    ],
+    "creators": [
+      {
+        "address": "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
+        "share": 100
+      }
+    ]
+  }
+}

@@ -449,8 +449,16 @@ app.post('/mint-nft', async (req, res) => {
       });
     }
     
+    console.log(`Minting NFT to ${recipientAddress} with IPFS hash: ${ipfsHash}`);
+    
+    // Format IPFS hash for MetaMask compatibility
+    let formattedIpfsHash = ipfsHash;
+    if (!formattedIpfsHash.startsWith('ipfs://')) {
+      formattedIpfsHash = `ipfs://${ipfsHash}`;
+    }
+    
     // Mint the NFT using the contract utility
-    const result = await mintNFTWithIPFS(recipientAddress, ipfsHash);
+    const result = await mintNFTWithIPFS(recipientAddress, formattedIpfsHash);
     
     if (result.success) {
       res.status(200).json(result);
@@ -466,7 +474,56 @@ app.post('/mint-nft', async (req, res) => {
   }
 });
 
-// Endpoint to mint an NFT directly from a DataJson entry
+// Endpoint to get NFT details by token ID
+app.get('/nft/:tokenId', async (req, res) => {
+  try {
+    const { tokenId } = req.params;
+    
+    if (!tokenId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token ID is required'
+      });
+    }
+    
+    const { getNFTDetails } = require('./utils/nftContract');
+    const nftDetails = await getNFTDetails(tokenId);
+    
+    if (!nftDetails) {
+      return res.status(404).json({
+        success: false,
+        error: `NFT with token ID ${tokenId} not found`
+      });
+    }
+    
+    // Add MetaMask import instructions
+    const contractAddress = nftDetails.contractAddress;
+    nftDetails.metamaskInfo = {
+      addToMetamask: `To add this NFT to MetaMask, follow these steps:
+      1. Open MetaMask and click on the 'NFTs' tab
+      2. Click 'Import NFT'
+      3. Enter the Contract Address: ${contractAddress}
+      4. Enter the Token ID: ${tokenId}
+      5. Click 'Import'`,
+      networkInfo: `Make sure your MetaMask is connected to the Sepolia Test Network`,
+      contractAddress: contractAddress,
+      tokenId: tokenId,
+      openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}/${tokenId}`
+    };
+    
+    res.status(200).json({
+      success: true,
+      nft: nftDetails
+    });
+  } catch (error) {
+    console.error('Error getting NFT details:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get NFT details'
+    });
+  }
+});
+
 app.post('/mint-nft-from-datajson', async (req, res) => {
   try {
     const { dataJsonId, recipientAddress } = req.body;
@@ -513,8 +570,15 @@ app.post('/mint-nft-from-datajson', async (req, res) => {
       });
     }
     
-    // Mint the NFT with the IPFS hash
-    const mintResult = await mintNFTWithIPFS(recipientAddress, ipfsResult.ipfsHash);
+    // Format IPFS hash for MetaMask compatibility
+    let formattedIpfsHash = ipfsResult.ipfsHash;
+    if (!formattedIpfsHash.startsWith('ipfs://')) {
+      formattedIpfsHash = `ipfs://${ipfsResult.ipfsHash}`;
+      console.log(`Formatted IPFS hash to: ${formattedIpfsHash}`);
+    }
+    
+    // Mint the NFT with the formatted IPFS hash
+    const mintResult = await mintNFTWithIPFS(recipientAddress, formattedIpfsHash);
     
     if (mintResult.success) {
       // Save the contract data
