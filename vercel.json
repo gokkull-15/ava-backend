@@ -1,7 +1,13 @@
 {
   "version": 2,
   "builds": [
-    { "src": "index.js", "use": "@vercel/node" }
+    { 
+      "src": "index.js", 
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [".env.production", "setEnv.js"]
+      }
+    }
   ],
   "routes": [
     { "src": "/datajson", "dest": "/index.js" },
