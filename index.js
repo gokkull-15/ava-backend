@@ -60,14 +60,23 @@ const DetailJson = mongoose.model('DetailJson', DetailJsonSchema);
 const Hash = mongoose.model('Hash', HashSchema);
 
 // Initialize Pinata client
-const pinata = process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY 
-  ? pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY)
-  : null;
+let pinata = null;
+try {
+  if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
+    pinata = pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY);
+    console.log('Pinata client initialized');
+  } else {
+    console.log('Pinata API keys not configured');
+  }
+} catch (error) {
+  console.error('Error initializing Pinata client:', error);
+}
 
 // Function to pin JSON to IPFS via Pinata
 const pinJSONToIPFS = async (jsonData, name) => {
   if (!pinata) {
-    throw new Error('Pinata API keys not configured');
+    console.log('Pinata client not available, skipping IPFS upload');
+    return null;
   }
 
   try {
@@ -78,6 +87,7 @@ const pinJSONToIPFS = async (jsonData, name) => {
     };
     
     const result = await pinata.pinJSONToIPFS(jsonData, options);
+    console.log('Successfully pinned to IPFS:', result.IpfsHash);
     return {
       ipfsHash: result.IpfsHash,
       pinataUrl: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`,
@@ -85,7 +95,7 @@ const pinJSONToIPFS = async (jsonData, name) => {
     };
   } catch (error) {
     console.error('Error pinning to IPFS:', error);
-    throw new Error(`Failed to pin to IPFS: ${error.message}`);
+    return null; // Return null instead of throwing error
   }
 };
 
@@ -119,14 +129,8 @@ app.post('/datajson', async (req, res) => {
     let ipfsResult = null;
     let savedData = null;
     
-    // Try to pin to IPFS if Pinata is configured
-    try {
-      if (pinata) {
-        ipfsResult = await pinJSONToIPFS(data, 'ava-data-' + Date.now());
-      }
-    } catch (ipfsError) {
-      console.error('IPFS error:', ipfsError.message);
-    }
+    // Try to pin to IPFS
+    ipfsResult = await pinJSONToIPFS(data, 'ava-data-' + Date.now());
     
     // Try to save to MongoDB if connected
     if (mongoConnected) {
@@ -161,14 +165,8 @@ app.post('/detailjson', async (req, res) => {
     let ipfsResult = null;
     let savedData = null;
     
-    // Try to pin to IPFS if Pinata is configured
-    try {
-      if (pinata) {
-        ipfsResult = await pinJSONToIPFS(detail, 'ava-detail-' + Date.now());
-      }
-    } catch (ipfsError) {
-      console.error('IPFS error:', ipfsError.message);
-    }
+    // Try to pin to IPFS
+    ipfsResult = await pinJSONToIPFS(detail, 'ava-detail-' + Date.now());
     
     // Try to save to MongoDB if connected
     if (mongoConnected) {
