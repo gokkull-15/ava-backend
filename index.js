@@ -205,18 +205,10 @@ app.post('/contract-data', async (req, res) => {
     // Pin the data to IPFS
     const ipfsResult = await pinJSONToIPFS(data, 'contract-data-' + Date.now());
     
-    // If IPFS pinning failed, return an error
-    if (!ipfsResult) {
-      return res.status(500).json({
-        error: 'Failed to pin data to IPFS',
-        mongoStatus: mongoConnected ? 1 : 0
-      });
-    }
-    
-    // Create contract data entry
+    // Create contract data entry even if IPFS pinning failed
     const contractEntry = {
       data,
-      ...ipfsResult
+      ...(ipfsResult || {})
     };
     
     // Try to save if MongoDB is connected
