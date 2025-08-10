@@ -22,6 +22,7 @@
     { "src": "/healthcheck", "dest": "/serverless.js" },
     { "src": "/datajson", "dest": "/serverless.js" },
     { "src": "/store-ipfs", "dest": "/serverless.js" },
+    { "src": "/stored-ipfs", "dest": "/serverless.js" },
     { "src": "/stored-ipfs/(?<index>[^/]+)", "dest": "/serverless.js" },
     { "src": "/mint-nft", "dest": "/serverless.js" },
     { "src": "/detailjson", "dest": "/index.js" },

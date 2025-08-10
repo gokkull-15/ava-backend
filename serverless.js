@@ -74,6 +74,24 @@ app.post('/datajson', async (req, res) => {
   }
 });
 
+// GET endpoint for datajson
+app.get('/datajson', async (req, res) => {
+  try {
+    // Mock response since we don't have a database
+    res.status(200).json({
+      message: 'MongoDB not connected',
+      data: [],
+      mongoStatus: 0
+    });
+  } catch (error) {
+    console.error('Error retrieving datajson:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to retrieve datajson' 
+    });
+  }
+});
+
 // Mock NFT minting endpoint
 app.post('/mint-nft', async (req, res) => {
   try {
@@ -155,6 +173,24 @@ app.post('/store-ipfs', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to store IPFS hash' 
+    });
+  }
+});
+
+// Retrieve all stored IPFS hashes
+app.get('/stored-ipfs', async (req, res) => {
+  try {
+    // Mock response
+    res.status(200).json({
+      message: 'MongoDB not connected',
+      data: [],
+      mongoStatus: 0
+    });
+  } catch (error) {
+    console.error('Error retrieving stored IPFS data:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to retrieve stored IPFS data' 
     });
   }
 });
