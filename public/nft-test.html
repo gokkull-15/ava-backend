@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Minting Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        
+        .success {
+            color: green;
+        }
+        
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>NFT Minting Test</h1>
+    
+    <div class="card">
+        <h2>Test NFT Minting with DataJsonId</h2>
+        <p>This test will create a new DataJson entry and then mint an NFT using the mintWithIPFS function with the DataJsonId.</p>
+        <button class="button" id="test-datajson-btn">Run Test</button>
+    </div>
+    
+    <div class="card">
+        <h2>Test NFT Minting with IPFS Hash</h2>
+        <p>This test will first create a DetailJson to get an IPFS hash, then mint an NFT using that IPFS hash directly.</p>
+        <button class="button" id="test-ipfs-btn">Run Test</button>
+    </div>
+    
+    <div class="log" id="log">
+        <p>Test log will appear here...</p>
+    </div>
+    
+    <script>
+        // Helper function to log messages
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const entry = document.createElement('div');
+            
+            if (type === 'success') {
+                entry.className = 'success';
+            } else if (type === 'error') {
+                entry.className = 'error';
+            }
+            
+            // If message is an object, stringify it
+            if (typeof message === 'object') {
+                message = JSON.stringify(message, null, 2);
+            }
+            
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Test minting with DataJsonId
+        document.getElementById('test-datajson-btn').addEventListener('click', async function() {
+            try {
+                log('Creating DataJson entry...');
+                
+                const dataJsonResponse = await fetch('https://ava-backend-sepia.vercel.app/datajson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Test NFT',
+                        description: 'This is a test NFT created via the mintWithIPFS function',
+                        image: 'https://example.com/image.png',
+                        attributes: [
+                            {
+                                trait_type: 'Test Trait',
+                                value: 'Test Value'
+                            }
+                        ]
+                    }),
+                });
+                
+                const dataJson = await dataJsonResponse.json();
+                log('DataJson created:', 'success');
+                log(dataJson);
+                
+                if (!dataJson.id) {
+                    log('No dataJsonId returned', 'error');
+                    return;
+                }
+                
+                log(`Minting NFT with dataJsonId: ${dataJson.id}...`);
+                
+                const mintResponse = await fetch('https://ava-backend-sepia.vercel.app/mint-nft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        recipientAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+                        dataJsonId: dataJson.id
+                    }),
+                });
+                
+                const mintResult = await mintResponse.json();
+                
+                if (mintResult.success) {
+                    log('NFT minted successfully!', 'success');
+                    log(mintResult);
+                    
+                    if (mintResult.tokenId) {
+                        log(`Getting NFT details for token ${mintResult.tokenId}...`);
+                        
+                        const detailsResponse = await fetch(`https://ava-backend-sepia.vercel.app/nft/${mintResult.tokenId}`);
+                        const details = await detailsResponse.json();
+                        
+                        log('NFT details retrieved:', 'success');
+                        log(details);
+                    }
+                } else {
+                    log('NFT minting failed', 'error');
+                    log(mintResult);
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test minting with IPFS hash
+        document.getElementById('test-ipfs-btn').addEventListener('click', async function() {
+            try {
+                log('Creating DetailJson entry to get IPFS hash...');
+                
+                const detailJsonResponse = await fetch('https://ava-backend-sepia.vercel.app/detailjson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Test NFT with IPFS',
+                        description: 'This is a test NFT created directly with IPFS hash',
+                        image: 'https://example.com/image2.png',
+                        attributes: [
+                            {
+                                trait_type: 'Direct IPFS',
+                                value: 'Yes'
+                            }
+                        ]
+                    }),
+                });
+                
+                const detailJson = await detailJsonResponse.json();
+                log('DetailJson created:', 'success');
+                log(detailJson);
+                
+                if (!detailJson.ipfs || !detailJson.ipfs.ipfsHash) {
+                    log('No IPFS hash returned', 'error');
+                    return;
+                }
+                
+                const ipfsHash = detailJson.ipfs.ipfsHash;
+                log(`Minting NFT with IPFS hash: ${ipfsHash}...`);
+                
+                const mintResponse = await fetch('https://ava-backend-sepia.vercel.app/mint-nft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        recipientAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+                        ipfsHash: ipfsHash
+                    }),
+                });
+                
+                const mintResult = await mintResponse.json();
+                
+                if (mintResult.success) {
+                    log('NFT minted successfully!', 'success');
+                    log(mintResult);
+                    
+                    if (mintResult.tokenId) {
+                        log(`Getting NFT details for token ${mintResult.tokenId}...`);
+                        
+                        const detailsResponse = await fetch(`https://ava-backend-sepia.vercel.app/nft/${mintResult.tokenId}`);
+                        const details = await detailsResponse.json();
+                        
+                        log('NFT details retrieved:', 'success');
+                        log(details);
+                    }
+                } else {
+                    log('NFT minting failed', 'error');
+                    log(mintResult);
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

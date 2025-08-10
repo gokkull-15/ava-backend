@@ -435,7 +435,7 @@ const PORT = process.env.PORT || 3000;
 // Endpoint to mint an NFT from an IPFS hash
 app.post('/mint-nft', async (req, res) => {
   try {
-    const { recipientAddress, ipfsHash } = req.body;
+    const { recipientAddress, ipfsHash, dataJsonId } = req.body;
     
     if (!recipientAddress) {
       return res.status(400).json({
@@ -444,25 +444,95 @@ app.post('/mint-nft', async (req, res) => {
       });
     }
     
-    if (!ipfsHash) {
+    // If ipfsHash is provided directly, use it
+    // Otherwise, try to get it from dataJsonId
+    let actualIpfsHash = ipfsHash;
+    
+    if (!actualIpfsHash && dataJsonId) {
+      // Try to find the DataJson entry and get its IPFS hash
+      if (!mongoConnected) {
+        return res.status(503).json({
+          success: false,
+          error: 'MongoDB not connected',
+          mongoStatus: 0
+        });
+      }
+      
+      try {
+        const dataJsonEntry = await DataJson.findById(dataJsonId);
+        
+        if (!dataJsonEntry) {
+          return res.status(404).json({
+            success: false,
+            error: `DataJson with ID ${dataJsonId} not found`
+          });
+        }
+        
+        // Pin data to IPFS to get a hash
+        const ipfsResult = await pinJSONToIPFS(dataJsonEntry.data, 'nft-from-datajson-' + Date.now());
+        
+        if (!ipfsResult || !ipfsResult.ipfsHash) {
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to pin data to IPFS'
+          });
+        }
+        
+        actualIpfsHash = ipfsResult.ipfsHash;
+        console.log(`Generated IPFS hash from dataJsonId: ${actualIpfsHash}`);
+        
+      } catch (dbError) {
+        console.error('Error fetching DataJson entry:', dbError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error fetching DataJson entry: ' + dbError.message
+        });
+      }
+    }
+    
+    if (!actualIpfsHash) {
       return res.status(400).json({
         success: false,
-        error: 'IPFS hash is required'
+        error: 'Either IPFS hash or dataJsonId is required'
       });
     }
     
-    console.log(`Minting NFT to ${recipientAddress} with IPFS hash: ${ipfsHash}`);
+    console.log(`Minting NFT to ${recipientAddress} with IPFS hash: ${actualIpfsHash}`);
     
     // Format IPFS hash for MetaMask compatibility
-    let formattedIpfsHash = ipfsHash;
+    let formattedIpfsHash = actualIpfsHash;
     if (!formattedIpfsHash.startsWith('ipfs://')) {
-      formattedIpfsHash = `ipfs://${ipfsHash}`;
+      formattedIpfsHash = `ipfs://${actualIpfsHash}`;
     }
     
-    // Mint the NFT using the contract utility
+    // Mint the NFT using the contract utility with mintWithIPFS function
     const result = await mintNFTWithIPFS(recipientAddress, formattedIpfsHash);
     
     if (result.success) {
+      // If we used dataJsonId, store the contract data
+      if (dataJsonId && mongoConnected) {
+        try {
+          const dataJsonEntry = await DataJson.findById(dataJsonId);
+          
+          const contractEntry = new ContractData({
+            data: dataJsonEntry.data,
+            ipfsHash: actualIpfsHash,
+            pinataUrl: `https://gateway.pinata.cloud/ipfs/${actualIpfsHash}`,
+            nftData: {
+              tokenId: result.tokenId,
+              recipientAddress: recipientAddress,
+              txHash: result.txHash,
+            }
+          });
+          
+          await contractEntry.save();
+          console.log('Saved contract data with NFT information');
+        } catch (saveError) {
+          console.error('Error saving contract data:', saveError);
+          // Continue with the response even if saving fails
+        }
+      }
+      
       // Get the host for dynamic URL generation
       const host = req.get('host') || 'ava-backend-sepia.vercel.app';
       const protocol = req.protocol || 'https';
@@ -496,7 +566,9 @@ app.post('/mint-nft', async (req, res) => {
         metamaskIntegration: {
           openPage: `${baseUrl}/nft-import/${chainId}/${contractAddress}/${tokenId}`,
           openMobileApp: `${baseUrl}/metamask-deeplink/${chainId}/${contractAddress}/${tokenId}`
-        }
+        },
+        ipfsHash: actualIpfsHash,
+        dataJsonId: dataJsonId || null
       });
     } else {
       res.status(500).json(result);
