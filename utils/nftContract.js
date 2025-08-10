@@ -21,10 +21,14 @@ const nftABI = [
   
   // Contract Specific Functions
   "function mintWithIPFS(address recipient, string memory ipfsHash) external returns (uint256)",
+  "function storeIPFSHash(string memory ipfsHash) external returns (uint256)",
+  "function getStoredIPFSHash(uint256 index) view external returns (string memory)",
   "function tokenCounter() view external returns (uint256)",
+  "function ipfsHashCounter() view external returns (uint256)",
   
   // Events
   "event NFTMinted(address indexed recipient, uint256 indexed tokenId, string tokenURI)",
+  "event IPFSHashStored(address indexed sender, uint256 indexed index, string ipfsHash)",
   "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
   "event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)",
   "event ApprovalForAll(address indexed owner, address indexed operator, bool approved)"
@@ -345,9 +349,147 @@ const getNFTDetails = async (tokenId) => {
   }
 };
 
+// Function to store only IPFS hash in the contract
+const storeIPFSHash = async (ipfsHash) => {
+  try {
+    // Validate input parameter
+    if (!ipfsHash || ipfsHash.trim() === "") {
+      throw new Error("IPFS hash cannot be empty");
+    }
+    
+    // Format the IPFS hash properly
+    let formattedIpfsHash = ipfsHash;
+    if (!ipfsHash.startsWith('ipfs://')) {
+      formattedIpfsHash = `ipfs://${ipfsHash.replace(/^ipfs:\/\//, '')}`;
+      console.log(`Formatted IPFS hash to: ${formattedIpfsHash}`);
+    }
+    
+    // Make sure we remove any double slashes that might occur
+    formattedIpfsHash = formattedIpfsHash.replace('ipfs://', 'ipfs://');
+    console.log(`Final IPFS hash format: ${formattedIpfsHash}`);
+    
+    const contract = getContract();
+    
+    console.log(`Storing IPFS hash ${formattedIpfsHash} in contract...`);
+    
+    // Get the current gas price and increase it slightly to ensure the transaction goes through
+    const provider = getProvider();
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice * BigInt(120) / BigInt(100); // 20% higher gas price
+    
+    // Store the IPFS hash with higher gas price for faster confirmation
+    const tx = await contract.storeIPFSHash(
+      formattedIpfsHash,
+      {
+        gasLimit: 200000, // Lower gas limit since we're not minting
+        gasPrice
+      }
+    );
+    
+    console.log(`Transaction sent: ${tx.hash}`);
+    console.log('Waiting for transaction confirmation...');
+    
+    // Wait for transaction to be mined
+    const receipt = await tx.wait();
+    console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+    
+    // Get the timestamp
+    const block = await provider.getBlock(receipt.blockNumber);
+    const timestamp = block ? block.timestamp : Math.floor(Date.now() / 1000);
+    
+    // Try to find the IPFSHashStored event
+    const storedEvent = receipt.logs
+      .filter(log => log.topics[0] === ethers.id("IPFSHashStored(address,uint256,string)"))
+      .map(log => {
+        try { return contract.interface.parseLog(log); } 
+        catch(e) { return null; }
+      })
+      .filter(Boolean)[0];
+    
+    let index = null;
+    
+    if (storedEvent) {
+      index = storedEvent.args.index.toString();
+      return {
+        success: true,
+        txHash: receipt.hash,
+        index: index,
+        contractAddress: contractAddress,
+        sender: storedEvent.args.sender,
+        ipfsHash: storedEvent.args.ipfsHash,
+        blockNumber: receipt.blockNumber,
+        timestamp: timestamp
+      };
+    }
+    
+    // If the event isn't found, try to get the current counter value
+    try {
+      const counter = await contract.ipfsHashCounter();
+      // The index is likely counter-1 for the just-stored hash
+      index = (counter - 1n).toString();
+    } catch (e) {
+      console.log("Could not get ipfsHashCounter:", e.message);
+    }
+    
+    return {
+      success: true,
+      txHash: receipt.hash,
+      index: index,
+      contractAddress: contractAddress,
+      blockNumber: receipt.blockNumber,
+      timestamp: timestamp,
+      ipfsHash: formattedIpfsHash,
+      message: "Transaction successful but storage event not found. Check transaction on blockchain explorer."
+    };
+    
+  } catch (error) {
+    console.error("Error storing IPFS hash:", error);
+    
+    // Check for common RPC errors
+    let errorMessage = error.message || "Failed to store IPFS hash";
+    
+    if (errorMessage.includes("Unauthorized") || errorMessage.includes("API key")) {
+      errorMessage = "RPC authentication failed. Please check your RPC URL configuration.";
+    } else if (errorMessage.includes("network") || errorMessage.includes("connect")) {
+      errorMessage = "Network error. Please check your internet connection and RPC URL.";
+    } else if (errorMessage.includes("insufficient funds")) {
+      errorMessage = "The wallet does not have enough ETH to pay for gas fees.";
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
+      details: error.message
+    };
+  }
+};
+
+// Function to get stored IPFS hash by index
+const getStoredIPFSHash = async (index) => {
+  try {
+    const contract = getContract();
+    const hash = await contract.getStoredIPFSHash(index);
+    return { 
+      success: true,
+      index: index,
+      ipfsHash: hash
+    };
+  } catch (error) {
+    console.error(`Error getting stored IPFS hash at index ${index}:`, error);
+    return {
+      success: false,
+      index: index,
+      error: error.message || "Failed to get stored IPFS hash"
+    };
+  }
+};
+
 module.exports = {
   mintNFTWithIPFS,
+  storeIPFSHash,
+  getStoredIPFSHash,
   getContract,
+  getProvider,
   getTokenURI,
   getNFTDetails
 };

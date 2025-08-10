@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const CryptoJS = require('crypto-js');
 const pinataSDK = require('@pinata/sdk');
 const path = require('path');
-const { mintNFTWithIPFS } = require('./utils/nftContract');
+const { mintNFTWithIPFS, getProvider } = require('./utils/nftContract');
 
 const app = express();
 app.use(bodyParser.json());
@@ -145,6 +145,8 @@ const ContractDataSchema = new mongoose.Schema({
     tokenId: String,
     recipientAddress: String,
     txHash: String,
+    blockNumber: Number,
+    timestamp: Number,
     mintedAt: {
       type: Date,
       default: Date.now
@@ -152,9 +154,29 @@ const ContractDataSchema = new mongoose.Schema({
   }
 });
 
+// Schema for storing IPFS hash transaction details
+const IPFSStorageSchema = new mongoose.Schema({
+  ipfsHash: String,
+  pinataUrl: String,
+  originalData: mongoose.Schema.Types.Mixed,
+  dataJsonId: String,
+  contractTransaction: {
+    txHash: String,
+    blockNumber: Number,
+    timestamp: Number,
+    index: String,
+    sender: String
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const DataJson = mongoose.model('DataJson', DataJsonSchema);
 const DetailJson = mongoose.model('DetailJson', DetailJsonSchema);
 const ContractData = mongoose.model('ContractData', ContractDataSchema);
+const IPFSStorage = mongoose.model('IPFSStorage', IPFSStorageSchema);
 
 // Initialize Pinata client
 let pinata = null;
@@ -226,15 +248,23 @@ app.post('/datajson', async (req, res) => {
   try {
     const data = req.body;
     let savedData = null;
+    let ipfsResult = null;
     
-    // Do NOT pin to IPFS for datajson endpoint per requirement
+    // Based on the updated flow, we now SHOULD pin to IPFS for datajson
+    try {
+      ipfsResult = await pinJSONToIPFS(data, 'datajson-' + Date.now());
+      console.log('DataJson pinned to IPFS:', ipfsResult?.ipfsHash);
+    } catch (ipfsErr) {
+      console.error('IPFS error:', ipfsErr.message);
+      // Continue even if IPFS pinning fails
+    }
     
     // Try to save to MongoDB if connected
     if (mongoConnected) {
       try {
         const dataEntry = new DataJson({
           data,
-          timestamp: new Date() // Just include timestamp
+          timestamp: new Date()
         });
         savedData = await dataEntry.save();
       } catch (dbErr) {
@@ -247,7 +277,8 @@ app.post('/datajson', async (req, res) => {
       received: data,
       saved: savedData ? true : false,
       id: savedData?._id || null,
-      mongoStatus: mongoConnected ? 1 : 0
+      mongoStatus: mongoConnected ? 1 : 0,
+      ipfs: ipfsResult || null
     });
   } catch (err) {
     console.error('Error in datajson endpoint:', err);
@@ -447,6 +478,7 @@ app.post('/mint-nft', async (req, res) => {
     // If ipfsHash is provided directly, use it
     // Otherwise, try to get it from dataJsonId
     let actualIpfsHash = ipfsHash;
+    let dataJsonData = null;
     
     if (!actualIpfsHash && dataJsonId) {
       // Try to find the DataJson entry and get its IPFS hash
@@ -468,18 +500,26 @@ app.post('/mint-nft', async (req, res) => {
           });
         }
         
-        // Pin data to IPFS to get a hash
-        const ipfsResult = await pinJSONToIPFS(dataJsonEntry.data, 'nft-from-datajson-' + Date.now());
+        dataJsonData = dataJsonEntry.data;
         
-        if (!ipfsResult || !ipfsResult.ipfsHash) {
-          return res.status(500).json({
-            success: false,
-            error: 'Failed to pin data to IPFS'
-          });
+        // Check if the DataJson entry already has an IPFS hash (from the updated datajson endpoint)
+        if (dataJsonEntry.ipfsHash) {
+          actualIpfsHash = dataJsonEntry.ipfsHash;
+          console.log(`Using existing IPFS hash from dataJsonId: ${actualIpfsHash}`);
+        } else {
+          // Pin data to IPFS to get a hash
+          const ipfsResult = await pinJSONToIPFS(dataJsonEntry.data, 'nft-from-datajson-' + Date.now());
+          
+          if (!ipfsResult || !ipfsResult.ipfsHash) {
+            return res.status(500).json({
+              success: false,
+              error: 'Failed to pin data to IPFS'
+            });
+          }
+          
+          actualIpfsHash = ipfsResult.ipfsHash;
+          console.log(`Generated new IPFS hash from dataJsonId: ${actualIpfsHash}`);
         }
-        
-        actualIpfsHash = ipfsResult.ipfsHash;
-        console.log(`Generated IPFS hash from dataJsonId: ${actualIpfsHash}`);
         
       } catch (dbError) {
         console.error('Error fetching DataJson entry:', dbError);
@@ -509,22 +549,35 @@ app.post('/mint-nft', async (req, res) => {
     const result = await mintNFTWithIPFS(recipientAddress, formattedIpfsHash);
     
     if (result.success) {
-      // If we used dataJsonId, store the contract data
-      if (dataJsonId && mongoConnected) {
+      // Store transaction details in the database
+      if (mongoConnected) {
         try {
-          const dataJsonEntry = await DataJson.findById(dataJsonId);
+          // Get the block timestamp if not provided in the result
+          let timestamp = result.timestamp;
+          if (!timestamp && result.blockNumber) {
+            const provider = getProvider();
+            const block = await provider.getBlock(result.blockNumber);
+            timestamp = block ? block.timestamp : Math.floor(Date.now() / 1000);
+          }
           
-          const contractEntry = new ContractData({
-            data: dataJsonEntry.data,
+          // If we used dataJsonId, store a reference to the original data
+          let contractData = {
             ipfsHash: actualIpfsHash,
-            pinataUrl: `https://gateway.pinata.cloud/ipfs/${actualIpfsHash}`,
+            pinataUrl: `https://gateway.pinata.cloud/ipfs/${actualIpfsHash.replace('ipfs://', '')}`,
             nftData: {
               tokenId: result.tokenId,
               recipientAddress: recipientAddress,
               txHash: result.txHash,
+              blockNumber: result.blockNumber,
+              timestamp: timestamp
             }
-          });
+          };
           
+          if (dataJsonData) {
+            contractData.data = dataJsonData;
+          }
+          
+          const contractEntry = new ContractData(contractData);
           await contractEntry.save();
           console.log('Saved contract data with NFT information');
         } catch (saveError) {
@@ -1067,11 +1120,84 @@ app.get('/test/nft/:tokenId', async (req, res) => {
   }
 });
 
-// Import the NFT import route
+// Import routes
 const nftImportRoute = require('./routes/nftImport');
+const storeIPFSHashRoute = require('./routes/storeIPFSHash');
 
 // Use the NFT import route directly
 app.get('/nft-import/:chainId/:contractAddress/:tokenId', nftImportRoute);
+
+// Endpoint to store only IPFS hash in the contract
+app.post('/store-ipfs', storeIPFSHashRoute);
+
+// Get stored IPFS hashes endpoints
+app.get('/stored-ipfs', async (req, res) => {
+  try {
+    if (!mongoConnected) {
+      return res.status(200).json({
+        message: 'MongoDB not connected',
+        data: [],
+        mongoStatus: 0
+      });
+    }
+    
+    const data = await IPFSStorage.find().sort({ 'createdAt': -1 }).limit(10);
+    
+    return res.status(200).json({
+      data,
+      count: data.length,
+      mongoStatus: 1
+    });
+    
+  } catch (err) {
+    console.error('Error retrieving stored IPFS data:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get stored IPFS hash by index
+app.get('/stored-ipfs/:index', async (req, res) => {
+  try {
+    const { index } = req.params;
+    
+    // First try to get it from the database
+    if (mongoConnected) {
+      try {
+        const storedData = await IPFSStorage.findOne({ 'contractTransaction.index': index });
+        
+        if (storedData) {
+          return res.status(200).json({
+            success: true,
+            data: storedData,
+            source: 'database'
+          });
+        }
+      } catch (dbErr) {
+        console.error('Database error:', dbErr.message);
+      }
+    }
+    
+    // If not found in database, try to get it from the contract
+    const { getStoredIPFSHash } = require('./utils/nftContract');
+    const result = await getStoredIPFSHash(index);
+    
+    if (result.success) {
+      return res.status(200).json({
+        ...result,
+        source: 'contract'
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: `No stored IPFS hash found with index ${index}`
+      });
+    }
+    
+  } catch (err) {
+    console.error(`Error retrieving stored IPFS hash at index ${req.params.index}:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // The NFT import functionality has been moved to a dedicated route in routes/nftImport.js
 

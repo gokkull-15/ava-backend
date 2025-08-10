@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT & IPFS Storage Testing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1, h2 {
+            color: #333;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        
+        .success {
+            color: green;
+        }
+        
+        .error {
+            color: red;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background-color: #f9f9f9;
+            border-bottom: none;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>NFT & IPFS Storage Testing</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="datajson">DataJson Flow</div>
+        <div class="tab" data-tab="nft">NFT Minting</div>
+        <div class="tab" data-tab="ipfs">IPFS Storage</div>
+    </div>
+    
+    <div class="tab-content active" data-tab="datajson">
+        <div class="card">
+            <h2>1. Create DataJson</h2>
+            <p>This creates JSON data and converts it to IPFS:</p>
+            <div>
+                <textarea id="datajson-input" rows="10" cols="50" placeholder="Enter JSON data here...">
+{
+    "name": "Test NFT",
+    "description": "Testing NFT creation flow",
+    "image": "https://example.com/image.png",
+    "attributes": [
+        {
+            "trait_type": "Test",
+            "value": "Value"
+        }
+    ]
+}
+                </textarea>
+            </div>
+            <button class="button" id="create-datajson-btn">Create DataJson</button>
+        </div>
+    </div>
+    
+    <div class="tab-content" data-tab="nft">
+        <div class="card">
+            <h2>2. Mint NFT with DataJsonId</h2>
+            <p>Use a DataJsonId to mint an NFT:</p>
+            <div>
+                <label for="recipient-address">Recipient Address:</label>
+                <input type="text" id="recipient-address" value="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" size="42">
+            </div>
+            <div>
+                <label for="datajson-id">DataJson ID:</label>
+                <input type="text" id="datajson-id" placeholder="Enter DataJson ID from step 1">
+            </div>
+            <button class="button" id="mint-nft-btn">Mint NFT</button>
+        </div>
+    </div>
+    
+    <div class="tab-content" data-tab="ipfs">
+        <div class="card">
+            <h2>3. Store IPFS Hash in Contract</h2>
+            <p>Store IPFS hash in the contract using the new function:</p>
+            <div>
+                <label for="store-datajson-id">DataJson ID:</label>
+                <input type="text" id="store-datajson-id" placeholder="Enter DataJson ID">
+            </div>
+            <div>
+                <label for="ipfs-hash">OR IPFS Hash:</label>
+                <input type="text" id="ipfs-hash" placeholder="Enter IPFS hash directly">
+            </div>
+            <button class="button" id="store-ipfs-btn">Store IPFS Hash</button>
+        </div>
+        
+        <div class="card">
+            <h2>4. Retrieve Stored IPFS Hash</h2>
+            <p>Get IPFS hash stored in the contract by index:</p>
+            <div>
+                <label for="ipfs-index">Index:</label>
+                <input type="text" id="ipfs-index" placeholder="Enter index number">
+            </div>
+            <button class="button" id="get-ipfs-btn">Get IPFS Hash</button>
+        </div>
+    </div>
+    
+    <div class="log" id="log">
+        <p>Test log will appear here...</p>
+    </div>
+    
+    <script>
+        // Helper function to log messages
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const entry = document.createElement('div');
+            
+            if (type === 'success') {
+                entry.className = 'success';
+            } else if (type === 'error') {
+                entry.className = 'error';
+            }
+            
+            // If message is an object, stringify it
+            if (typeof message === 'object') {
+                message = JSON.stringify(message, null, 2);
+            }
+            
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                const tabId = this.getAttribute('data-tab');
+                
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show the selected tab content
+                document.querySelector(`.tab-content[data-tab="${tabId}"]`).classList.add('active');
+            });
+        });
+        
+        // Create DataJson
+        document.getElementById('create-datajson-btn').addEventListener('click', async function() {
+            try {
+                const jsonInput = document.getElementById('datajson-input').value;
+                let jsonData;
+                
+                try {
+                    jsonData = JSON.parse(jsonInput);
+                } catch (parseError) {
+                    log(`Error parsing JSON: ${parseError.message}`, 'error');
+                    return;
+                }
+                
+                log('Creating DataJson entry...');
+                
+                const response = await fetch('https://ava-backend-sepia.vercel.app/datajson', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData),
+                });
+                
+                const data = await response.json();
+                
+                if (data.id) {
+                    log('DataJson created successfully!', 'success');
+                    log(data);
+                    
+                    // Auto-fill the DataJson IDs in other tabs
+                    document.getElementById('datajson-id').value = data.id;
+                    document.getElementById('store-datajson-id').value = data.id;
+                    
+                    if (data.ipfs && data.ipfs.ipfsHash) {
+                        document.getElementById('ipfs-hash').value = data.ipfs.ipfsHash;
+                    }
+                } else {
+                    log('DataJson creation response did not include an ID', 'error');
+                    log(data);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Mint NFT with DataJsonId
+        document.getElementById('mint-nft-btn').addEventListener('click', async function() {
+            try {
+                const recipientAddress = document.getElementById('recipient-address').value;
+                const dataJsonId = document.getElementById('datajson-id').value;
+                
+                if (!recipientAddress) {
+                    log('Recipient address is required', 'error');
+                    return;
+                }
+                
+                if (!dataJsonId) {
+                    log('DataJson ID is required', 'error');
+                    return;
+                }
+                
+                log(`Minting NFT to ${recipientAddress} with DataJson ID: ${dataJsonId}...`);
+                
+                const response = await fetch('https://ava-backend-sepia.vercel.app/mint-nft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        recipientAddress,
+                        dataJsonId
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('NFT minted successfully!', 'success');
+                    log(data);
+                } else {
+                    log('NFT minting failed', 'error');
+                    log(data);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Store IPFS hash in contract
+        document.getElementById('store-ipfs-btn').addEventListener('click', async function() {
+            try {
+                const dataJsonId = document.getElementById('store-datajson-id').value;
+                const ipfsHash = document.getElementById('ipfs-hash').value;
+                
+                if (!dataJsonId && !ipfsHash) {
+                    log('Either DataJson ID or IPFS hash is required', 'error');
+                    return;
+                }
+                
+                log(`Storing ${dataJsonId ? 'DataJson ID: ' + dataJsonId : 'IPFS hash: ' + ipfsHash} in contract...`);
+                
+                const requestBody = {};
+                if (dataJsonId) requestBody.dataJsonId = dataJsonId;
+                if (ipfsHash) requestBody.ipfsHash = ipfsHash;
+                
+                const response = await fetch('https://ava-backend-sepia.vercel.app/store-ipfs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('IPFS hash stored successfully!', 'success');
+                    log(data);
+                    
+                    if (data.index) {
+                        document.getElementById('ipfs-index').value = data.index;
+                    }
+                } else {
+                    log('IPFS hash storage failed', 'error');
+                    log(data);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Get stored IPFS hash
+        document.getElementById('get-ipfs-btn').addEventListener('click', async function() {
+            try {
+                const index = document.getElementById('ipfs-index').value;
+                
+                if (!index) {
+                    log('Index is required', 'error');
+                    return;
+                }
+                
+                log(`Getting stored IPFS hash at index: ${index}...`);
+                
+                const response = await fetch(`https://ava-backend-sepia.vercel.app/stored-ipfs/${index}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('IPFS hash retrieved successfully!', 'success');
+                    log(data);
+                } else {
+                    log('Failed to retrieve IPFS hash', 'error');
+                    log(data);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
