@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     { 
+      "src": "serverless.js", 
+      "use": "@vercel/node"
+    },
+    { 
       "src": "index.js", 
       "use": "@vercel/node",
       "config": {
@@ -14,6 +18,8 @@
     }
   ],
   "routes": [
+    { "src": "/", "dest": "/serverless.js" },
+    { "src": "/healthcheck", "dest": "/serverless.js" },
     { "src": "/datajson", "dest": "/index.js" },
     { "src": "/detailjson", "dest": "/index.js" },
     { "src": "/contract-data", "dest": "/index.js" },
@@ -29,7 +35,8 @@
     { "src": "/add-to-metamask.html", "dest": "/public/add-to-metamask.html" },
     { "src": "/mm-watch-asset.html", "dest": "/public/mm-watch-asset.html" },
     { "src": "/mint-success.html", "dest": "/public/mint-success.html" },
-    { "src": "/api/(.*)", "dest": "/index.js" },
+    { "src": "/api/(.*)", "dest": "/serverless.js" },
+    { "src": "/serverless-test", "dest": "/serverless.js" },
     { "src": "/(.*)", "dest": "/index.js" }
   ]
 }
