@@ -64,7 +64,7 @@ const handleStoreIPFSHash = async (req, res) => {
     }
     
     // Use the contract utility to store the IPFS hash
-    const { storeIPFSHash } = require('./utils/nftContract');
+    const { storeIPFSHash } = require('../utils/nftContract');
     const result = await storeIPFSHash(actualIpfsHash);
     
     // If successful, store transaction details in the database

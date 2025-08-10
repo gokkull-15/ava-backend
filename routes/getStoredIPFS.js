@@ -46,7 +46,7 @@ app.get('/stored-ipfs/:index', async (req, res) => {
     }
     
     // If not found in database, try to get it from the contract
-    const { getStoredIPFSHash } = require('./utils/nftContract');
+    const { getStoredIPFSHash } = require('../utils/nftContract');
     const result = await getStoredIPFSHash(index);
     
     if (result.success) {
