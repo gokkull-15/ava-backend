@@ -1,5 +1,9 @@
+// Import required modules and models
+const { mongoConnected } = require('../index');
+const IPFSStorage = require('../models/IPFSStorage');
+
 // Get stored IPFS hashes
-app.get('/stored-ipfs', async (req, res) => {
+const getStoredIPFS = async (req, res) => {
   try {
     if (!mongoConnected) {
       return res.status(200).json({
@@ -21,10 +25,10 @@ app.get('/stored-ipfs', async (req, res) => {
     console.error('Error retrieving stored IPFS data:', err);
     res.status(500).json({ error: err.message });
   }
-});
+};
 
 // Get stored IPFS hash by index
-app.get('/stored-ipfs/:index', async (req, res) => {
+const getStoredIPFSByIndex = async (req, res) => {
   try {
     const { index } = req.params;
     
@@ -65,4 +69,9 @@ app.get('/stored-ipfs/:index', async (req, res) => {
     console.error(`Error retrieving stored IPFS hash at index ${req.params.index}:`, err);
     res.status(500).json({ error: err.message });
   }
-});
+};
+
+module.exports = {
+  getStoredIPFS,
+  getStoredIPFSByIndex
+};
