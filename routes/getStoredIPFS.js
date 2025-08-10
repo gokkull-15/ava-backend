@@ -1,11 +1,11 @@
-// Import required modules and models
+// Import required modules and get MongoDB status directly
 const mongoose = require('mongoose');
 
-// Directly check MongoDB connection status instead of importing from index
+// Directly check MongoDB connection status
 const mongoConnected = mongoose.connection.readyState === 1;
 
-// Import models directly
-const IPFSStorage = mongoose.models.IPFSStorage || mongoose.model('IPFSStorage', require('../models/IPFSStorageSchema'));
+// Since the models are defined in index.js, we'll access them from there
+const { IPFSStorage } = require('../index');
 
 // Get stored IPFS hashes
 const getStoredIPFS = async (req, res) => {
