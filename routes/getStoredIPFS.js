@@ -1,5 +1,9 @@
-// Import from the central db.js file
-const { isConnected, IPFSStorage } = require('../utils/db');
+// Import required modules
+const mongoose = require('mongoose');
+const IPFSStorage = require('../models/IPFSStorage');
+
+// Helper function to check MongoDB connection
+const isConnected = () => mongoose.connection.readyState === 1;
 
 // Get stored IPFS hashes
 const getStoredIPFS = async (req, res) => {

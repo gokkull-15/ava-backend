@@ -5,7 +5,7 @@
       "src": "index.js", 
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [".env.production", "setEnv.js", "public/**", "routes/**", "utils/**"]
+        "includeFiles": [".env.production", "setEnv.js", "public/**", "routes/**", "utils/**", "models/**"]
       }
     },
     {
