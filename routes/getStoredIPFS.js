@@ -1,6 +1,11 @@
 // Import required modules and models
-const { mongoConnected } = require('../index');
-const IPFSStorage = require('../models/IPFSStorage');
+const mongoose = require('mongoose');
+
+// Directly check MongoDB connection status instead of importing from index
+const mongoConnected = mongoose.connection.readyState === 1;
+
+// Import models directly
+const IPFSStorage = mongoose.models.IPFSStorage || mongoose.model('IPFSStorage', require('../models/IPFSStorageSchema'));
 
 // Get stored IPFS hashes
 const getStoredIPFS = async (req, res) => {

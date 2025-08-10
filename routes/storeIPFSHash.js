@@ -1,9 +1,14 @@
 // Function to handle storing IPFS hash in the contract
 // Import required modules and models
-const { mongoConnected } = require('../index');
-const DataJson = require('../models/DataJson');
-const IPFSStorage = require('../models/IPFSStorage');
+const mongoose = require('mongoose');
 const { pinJSONToIPFS } = require('../utils/ipfs');
+
+// Directly check MongoDB connection status instead of importing from index
+const mongoConnected = mongoose.connection.readyState === 1;
+
+// Import models directly
+const DataJson = mongoose.models.DataJson || mongoose.model('DataJson', require('../models/DataJsonSchema'));
+const IPFSStorage = mongoose.models.IPFSStorage || mongoose.model('IPFSStorage', require('../models/IPFSStorageSchema'));
 
 const handleStoreIPFSHash = async (req, res) => {
   try {

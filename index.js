@@ -1160,3 +1160,6 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit the process
 });
+
+// Export variables for use in other modules
+module.exports = { mongoConnected, app, DataJson, IPFSStorage };
