@@ -1,16 +1,10 @@
-// Import required modules and get MongoDB status directly
-const mongoose = require('mongoose');
-
-// Directly check MongoDB connection status
-const mongoConnected = mongoose.connection.readyState === 1;
-
-// Since the models are defined in index.js, we'll access them from there
-const { IPFSStorage } = require('../index');
+// Import from the central db.js file
+const { isConnected, IPFSStorage } = require('../utils/db');
 
 // Get stored IPFS hashes
 const getStoredIPFS = async (req, res) => {
   try {
-    if (!mongoConnected) {
+    if (!isConnected()) {
       return res.status(200).json({
         message: 'MongoDB not connected',
         data: [],
@@ -38,7 +32,7 @@ const getStoredIPFSByIndex = async (req, res) => {
     const { index } = req.params;
     
     // First try to get it from the database
-    if (mongoConnected) {
+    if (isConnected()) {
       try {
         const storedData = await IPFSStorage.findOne({ 'contractTransaction.index': index });
         

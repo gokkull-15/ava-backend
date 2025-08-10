@@ -1,13 +1,7 @@
 // Function to handle storing IPFS hash in the contract
-// Import required modules and get MongoDB status directly
-const mongoose = require('mongoose');
+// Import from the central db.js file and other utilities
+const { isConnected, DataJson, IPFSStorage } = require('../utils/db');
 const { pinJSONToIPFS } = require('../utils/ipfs');
-
-// Directly check MongoDB connection status
-const mongoConnected = mongoose.connection.readyState === 1;
-
-// Since the models are defined in index.js, we'll access them from there
-const { DataJson, IPFSStorage } = require('../index');
 
 const handleStoreIPFSHash = async (req, res) => {
   try {
@@ -25,7 +19,7 @@ const handleStoreIPFSHash = async (req, res) => {
     
     // If only dataJsonId is provided, get the IPFS hash from it
     if (!actualIpfsHash && dataJsonId) {
-      if (!mongoConnected) {
+      if (!isConnected()) {
         return res.status(503).json({
           success: false,
           error: 'MongoDB not connected',
@@ -78,7 +72,7 @@ const handleStoreIPFSHash = async (req, res) => {
     const result = await storeIPFSHash(actualIpfsHash);
     
     // If successful, store transaction details in the database
-    if (result.success && mongoConnected) {
+    if (result.success && isConnected()) {
       try {
         const storageEntry = new IPFSStorage({
           ipfsHash: actualIpfsHash,
