@@ -1,0 +1,201 @@
+{
+  "info": {
+    "_postman_id": "ava-nft-collection",
+    "name": "AVA NFT API Collection",
+    "description": "Collection for testing AVA NFT and MetaMask integration endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "NFT Operations",
+      "item": [
+        {
+          "name": "Store NFT Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sample NFT\",\n  \"description\": \"This is a sample NFT for testing\",\n  \"image\": \"https://example.com/image.png\",\n  \"attributes\": [\n    {\n      \"trait_type\": \"Background\",\n      \"value\": \"Blue\"\n    },\n    {\n      \"trait_type\": \"Eyes\",\n      \"value\": \"Green\"\n    },\n    {\n      \"trait_type\": \"Outfit\",\n      \"value\": \"Casual\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/datajson",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "datajson"
+              ]
+            },
+            "description": "Stores NFT metadata and returns an ID that can be used for minting"
+          },
+          "response": []
+        },
+        {
+          "name": "Get NFT Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/datajson/{{dataJsonId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "datajson",
+                "{{dataJsonId}}"
+              ]
+            },
+            "description": "Retrieves stored NFT metadata by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Mint NFT from Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletAddress\": \"{{walletAddress}}\",\n  \"dataJsonId\": \"{{dataJsonId}}\",\n  \"tokenId\": \"{{tokenId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mint-nft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mint-nft"
+              ]
+            },
+            "description": "Mints an NFT using stored metadata"
+          },
+          "response": []
+        },
+        {
+          "name": "Get NFT Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nft/{{tokenId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nft",
+                "{{tokenId}}"
+              ]
+            },
+            "description": "Gets details about a minted NFT by token ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints related to NFT creation and management"
+    },
+    {
+      "name": "MetaMask Integration",
+      "item": [
+        {
+          "name": "Get Import NFT URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/import-to-metamask?tokenId={{tokenId}}&contractAddress={{contractAddress}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "import-to-metamask"
+              ],
+              "query": [
+                {
+                  "key": "tokenId",
+                  "value": "{{tokenId}}"
+                },
+                {
+                  "key": "contractAddress",
+                  "value": "{{contractAddress}}"
+                }
+              ]
+            },
+            "description": "Gets a URL that can be used to import an NFT to MetaMask"
+          },
+          "response": []
+        },
+        {
+          "name": "Check NFT Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nft-status?txHash={{txHash}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nft-status"
+              ],
+              "query": [
+                {
+                  "key": "txHash",
+                  "value": "{{txHash}}"
+                }
+              ]
+            },
+            "description": "Checks the status of a minted NFT by transaction hash"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints related to MetaMask integration for NFTs"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// You can add pre-request scripts here",
+          "console.log('Running pre-request script');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// You can add test scripts here",
+          "console.log('Running test script');"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://ava-backend-sepia.vercel.app",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "ava-backend-environment",
+  "name": "AVA Backend Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://ava-backend-sepia.vercel.app",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "localUrl",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": false
+    },
+    {
+      "key": "walletAddress",
+      "value": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "contractAddress",
+      "value": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tokenId",
+      "value": "123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "ipfsHash",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    },
+    {
+      "key": "dataJsonId",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    },
+    {
+      "key": "txHash",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

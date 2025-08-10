@@ -1,0 +1,305 @@
+{
+  "info": {
+    "name": "AVA Backend API - NFT & MetaMask",
+    "description": "Collection for AVA Backend API, focusing on NFT creation and MetaMask integration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/healthcheck",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "healthcheck"
+          ]
+        },
+        "description": "Check if the API and its dependencies (MongoDB, etc.) are running properly"
+      },
+      "response": []
+    },
+    {
+      "name": "1. Store Data (without IPFS)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"AVA NFT #1\",\n  \"description\": \"This is my first NFT in the AVA collection\",\n  \"image\": \"https://gateway.pinata.cloud/ipfs/QmUFfU2K5gkwcwhnJbVVwacCUjGPF9YgJFQAMeGMjAV4ew\",\n  \"attributes\": [\n    {\n      \"trait_type\": \"Rarity\",\n      \"value\": \"Legendary\"\n    },\n    {\n      \"trait_type\": \"Series\",\n      \"value\": \"Genesis\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/datajson",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "datajson"
+          ]
+        },
+        "description": "Store NFT metadata in MongoDB without pinning to IPFS"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Store Data with IPFS Pinning",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"AVA NFT #1\",\n  \"description\": \"This is my first NFT in the AVA collection\",\n  \"image\": \"https://gateway.pinata.cloud/ipfs/QmUFfU2K5gkwcwhnJbVVwacCUjGPF9YgJFQAMeGMjAV4ew\",\n  \"attributes\": [\n    {\n      \"trait_type\": \"Rarity\",\n      \"value\": \"Legendary\"\n    },\n    {\n      \"trait_type\": \"Series\",\n      \"value\": \"Genesis\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/detailjson",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "detailjson"
+          ]
+        },
+        "description": "Store NFT metadata in MongoDB and pin to IPFS"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Create Contract Data from DataJson",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dataJsonId\": \"{{dataJsonId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/convert-datajson-to-contract",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "convert-datajson-to-contract"
+          ]
+        },
+        "description": "Convert DataJson to ContractData by pinning to IPFS"
+      },
+      "response": []
+    },
+    {
+      "name": "4a. Mint NFT with IPFS Hash",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipientAddress\": \"{{walletAddress}}\",\n  \"ipfsHash\": \"{{ipfsHash}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/mint-nft",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "mint-nft"
+          ]
+        },
+        "description": "Mint an NFT using a provided IPFS hash"
+      },
+      "response": []
+    },
+    {
+      "name": "4b. Mint NFT from DataJson",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dataJsonId\": \"{{dataJsonId}}\",\n  \"recipientAddress\": \"{{walletAddress}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/mint-nft-from-datajson",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "mint-nft-from-datajson"
+          ]
+        },
+        "description": "Mint an NFT from previously stored DataJson"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get NFT Details",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/nft/{{tokenId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "nft",
+            "{{tokenId}}"
+          ]
+        },
+        "description": "Get details about a specific NFT by its token ID"
+      },
+      "response": []
+    },
+    {
+      "name": "6a. NFT Import Page",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/nft-import/sepolia/{{contractAddress}}/{{tokenId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "nft-import",
+            "sepolia",
+            "{{contractAddress}}",
+            "{{tokenId}}"
+          ]
+        },
+        "description": "Get the NFT import page for MetaMask"
+      },
+      "response": []
+    },
+    {
+      "name": "6b. MetaMask Deep Link",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/metamask-deeplink/sepolia/{{contractAddress}}/{{tokenId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "metamask-deeplink",
+            "sepolia",
+            "{{contractAddress}}",
+            "{{tokenId}}"
+          ]
+        },
+        "description": "Get the MetaMask deep link for mobile users"
+      },
+      "response": []
+    },
+    {
+      "name": "6c. Mint Success Page",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/mint-success/sepolia/{{contractAddress}}/{{tokenId}}?txHash={{txHash}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "mint-success",
+            "sepolia",
+            "{{contractAddress}}",
+            "{{tokenId}}"
+          ],
+          "query": [
+            {
+              "key": "txHash",
+              "value": "{{txHash}}"
+            }
+          ]
+        },
+        "description": "Get the success page after minting an NFT"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Test NFT (Mock Data)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/test/nft/123",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "test",
+            "nft",
+            "123"
+          ]
+        },
+        "description": "Get test NFT data with mock information for testing MetaMask integration"
+      },
+      "response": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://ava-backend-sepia.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "walletAddress",
+      "value": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "type": "string"
+    },
+    {
+      "key": "contractAddress",
+      "value": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "type": "string"
+    },
+    {
+      "key": "tokenId",
+      "value": "123",
+      "type": "string"
+    },
+    {
+      "key": "ipfsHash",
+      "value": "QmfZbzUHa9cPExnJWn8qEaPU3nA9CT5V2ZAv8Wk37tLugQ",
+      "type": "string"
+    },
+    {
+      "key": "dataJsonId",
+      "value": "",
+      "type": "string",
+      "description": "ID from a DataJson entry response"
+    },
+    {
+      "key": "txHash",
+      "value": "",
+      "type": "string",
+      "description": "Transaction hash from a mint response"
+    }
+  ]
+}
